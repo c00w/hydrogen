@@ -1,4 +1,4 @@
-.PHONY: capnproto all
+.PHONY: capn all
 
 GOPATH := $(CURDIR)
 PATH := ${PATH}:${GOPATH}/bin
@@ -6,7 +6,7 @@ PLATFORM := linux_amd64
 
 all: bin/hydrogend
 
-src/libnode/message.go: src/libnode/message.capnp
+src/libnode/message.capnp.go: src/libnode/message.capnp
 	capnp compile -ogo src/libnode/message.capnp
 
 bin/capnpc-go:
