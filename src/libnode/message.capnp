@@ -16,20 +16,30 @@ struct Time {
     nanoSeconds @1: UInt32;
 }
 
+struct TransactionChange {
+    destination @0: Data;
+    amount @1: UInt64;
+}
+
+struct LocationChange {
+    location @0: Text;
+}
+
+struct KeyChange {
+    newkeys @0: List(Data);
+}
+
 struct Change {
 
-    type @0 : UInt8;
-    account @1: Data;
-    authorization @2: List(Signature);
-    created @3: Time;
+    account @0: Data;
+    authorization @1: List(Signature);
+    created @2: Time;
 
-    newValue @4: Data;
-    # Is the new value for everything but transactions,
-    # Is the amount transfered for transactions.
-
-    destination @5: Data;
-    # Only Used for transactions
-
+    type :union {
+         transaction @3 :TransactionChange;
+         location @4 :LocationChange;
+         key @5 :KeyChange;
+    }
 }
 
 struct Message {
