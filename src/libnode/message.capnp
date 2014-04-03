@@ -6,8 +6,8 @@ $Go.import("libnode");
 @0xf5151606f45c93ef;
 
 struct Signature {
-    key @0 : Data;
-    signature @1 : Data;
+    key @0: Data;
+    signature @1: Data;
 }
 
 struct Time {
@@ -17,35 +17,54 @@ struct Time {
 }
 
 struct TransactionChange {
-    destination @0: Data;
-    amount @1: UInt64;
+    source @0: Data;
+    destination @1: Data;
+    amount @2: UInt64;
 }
 
 struct LocationChange {
-    location @0: Text;
+    account @0: Data;
+    location @1: Text;
 }
 
 struct KeyChange {
-    newkeys @0: List(Data);
+    account @0: Data;
+    newkeys @1: List(Data);
+}
+
+struct DropChange {
+    account @0: Data;
+}
+
+enum TimeVote {
+    constant @0;
+    increase @1;
+    decrease @2;
+}
+
+struct TimeChange {
+    vote @0: TimeVote;
 }
 
 struct Change {
 
-    account @0: Data;
-    authorization @1: List(Signature);
-    created @2: Time;
+    authorization @0: List(Signature);
+    created @1: Time;
 
     type :union {
-         transaction @3 :TransactionChange;
-         location @4 :LocationChange;
-         key @5 :KeyChange;
+         transaction @2 :TransactionChange;
+         location @3 :LocationChange;
+         key @4: KeyChange;
+         drop @5: DropChange;
+         time @6: TimeChange;
+
     }
 }
 
 struct Vote {
     votes @0: List(Change);
     time @1: Time;
-    signature @2: List(Signature);
+    authorization @2: List(Signature);
 }
 
 struct Message {
