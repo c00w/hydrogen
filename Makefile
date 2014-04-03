@@ -14,8 +14,8 @@ bin/capnpc-go:
 
 capn:
 	echo "Do not execute this command unless you are purposefully updating the version"
-	go get -u github.com/jmckaskill/go-capnproto
-	go get -u github.com/jmckaskill/go-capnproto/capnpc-go
+	go get -u github.com/glycerine/go-capnproto
+	go get -u github.com/glycerine/go-capnproto/capnpc-go
 
 pkg/${PLATFORM}/libnode.a: src/libnode/*.go src/libnode/message.capnp.go
 	go install libnode
