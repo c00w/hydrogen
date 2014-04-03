@@ -18,9 +18,11 @@ capn:
 	go get -u github.com/jmckaskill/go-capnproto/capnpc-go
 
 pkg/${PLATFORM}/libnode.a: src/libnode/*.go
+	rm pkg/${PLATFORM}/libnode.a
 	go install libnode
 
 bin/hydrogend: pkg/${PLATFORM}/libnode.a src/hydrogend/*.go
+	rm bin/hydrogend
 	go install hydrogend
 
 

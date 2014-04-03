@@ -42,8 +42,16 @@ struct Change {
     }
 }
 
-struct Message {
+struct Vote {
     votes @0: List(Change);
     time @1: Time;
     signature @2: List(Signature);
 }
+
+struct Message {
+    union {
+        vote @0: Vote;
+        change @1: Change;
+    }
+}
+
