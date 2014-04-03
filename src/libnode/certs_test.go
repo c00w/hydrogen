@@ -12,9 +12,14 @@ func TestTLSCertCreation(t *testing.T) {
     if err != nil {
         t.Fatal(err)
     }
-    tlscert := CreateTLSCert("account", "ssl://test_machine:20", &priv.PublicKey, priv)
-    if tlscert == nil {
-        t.Fatal(tlscert)
+
+    n := &Node{
+        "account",
+        priv,
+        "ssl://test_machine:20",
     }
+
+    tlscert := n.CreateTLSCert()
+    tlscert = tlscert
 
 }
