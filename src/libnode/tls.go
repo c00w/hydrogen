@@ -83,11 +83,7 @@ func (n *Node) CreateTLSCert() tls.Certificate {
 		NotAfter:              NotAfter,
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		BasicConstraintsValid: true,
 		MaxPathLen:            1,
-		IsCA:                  true,
-		SubjectKeyId:          []byte{1, 2, 3, 4},
-		Version:               2,
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, template, template, &n.Key.PublicKey, n.Key)
