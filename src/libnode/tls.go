@@ -62,7 +62,7 @@ func (n *Node) TLSConfig() *tls.Config {
 		ClientAuth:               tls.RequireAnyClientCert,
 		CipherSuites:             []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
 		InsecureSkipVerify:       true,
-		NextProtos:               []string{"hydrogen-core"},
+		NextProtos:               []string{"hydrogen"},
 	}
 }
 
