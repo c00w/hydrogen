@@ -10,7 +10,7 @@ src/libnode/message.capnp.go: src/libnode/message.capnp
 	capnp compile -ogo src/libnode/message.capnp
 
 bin/capnpc-go:
-	go install github.com/jmckaskill/go-capnproto/capnpc-go
+	go install github.com/glycerine/go-capnproto/capnpc-go
 
 capn:
 	echo "Do not execute this command unless you are purposefully updating the version"
