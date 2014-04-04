@@ -6,7 +6,10 @@ PLATFORM := linux_amd64
 
 all: bin/hydrogend
 
-src/libnode/message.capnp.go: src/libnode/message.capnp
+test: pkg/${PLATFORM}/libnode.a
+	go test libnode
+
+src/libnode/message.capnp.go: src/libnode/message.capnp bin/capnpc-go
 	capnp compile -ogo src/libnode/message.capnp
 
 bin/capnpc-go:
