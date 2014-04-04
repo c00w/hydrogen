@@ -5,7 +5,7 @@ import (
     "net"
 )
 
-
+// Listen on an address and wrap incoming connections in TLS
 func (n *Node) TLSListen(address string) {
     l, err := net.Listen("tcp", address)
     if err != nil {
@@ -22,6 +22,7 @@ func (n *Node) TLSListen(address string) {
     }
 }
 
+// Connect to an address and wrap incoming connections in TLS
 func (n *Node) TLSConnect(address string) {
     c, err := net.Dial("tcp", address)
     if err != nil {
@@ -31,6 +32,7 @@ func (n *Node) TLSConnect(address string) {
     go n.TLSSetup(c, false)
 }
 
+// Wrap a network connection in TLS
 func (n *Node) TLSSetup(c net.Conn, server bool) *tls.Conn {
 
     config := &tls.Config{
