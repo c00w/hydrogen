@@ -7,10 +7,10 @@ import (
 
 // A connection to a neighbor
 type NeighborNode struct {
-	c tls.Conn
+	c *tls.Conn
 }
 
-func verify(c tls.Conn) error {
+func verifySigned(c *tls.Conn) error {
 	certs := c.ConnectionState().PeerCertificates
 	if len(certs) != 1 {
 		panic("Weird certs")
@@ -31,15 +31,14 @@ func verify(c tls.Conn) error {
 		return err
 	}
 
-	// TODO: Verify account -> private key mapping in directory
 	return nil
 
 }
 
 // Create a new Neighbor & verifies the tls connection
-func NewNeighborNode(c tls.Conn) *NeighborNode {
+func NewNeighborNode(c *tls.Conn) *NeighborNode {
 
-	err := verify(c)
+	err := verifySigned(c)
 	if err != nil {
 		panic(err.Error())
 	}

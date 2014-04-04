@@ -48,4 +48,6 @@ func TestTLSConnection(t *testing.T) {
 	if b[0] != 'F' {
 		t.Fatalf("Excepted \"Foo\", got %s", string(b))
 	}
+
+    _ = NewNeighborNode(c1)
 }
