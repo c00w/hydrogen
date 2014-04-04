@@ -1,13 +1,11 @@
 package libnode
 
 import (
-    "crypto/ecdsa"
+	"crypto/ecdsa"
 )
 
 type Node struct {
-    Account string
-    Key *ecdsa.PrivateKey
-    Location string
+	Account  string
+	Key      *ecdsa.PrivateKey
+	Location string
 }
-
-

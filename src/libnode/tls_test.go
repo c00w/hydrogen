@@ -1,51 +1,51 @@
 package libnode
 
 import (
-    "crypto/tls"
-    "crypto/ecdsa"
-    "crypto/elliptic"
-    "crypto/rand"
-    "testing"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
+	"testing"
 )
 
 func TestTLSConnection(t *testing.T) {
-    priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
-    if err != nil {
-        t.Fatal(err)
-    }
+	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-    N := &Node{
-        "account",
-        priv,
-        "ssl://test_machine:20",
-    }
+	N := &Node{
+		"account",
+		priv,
+		"ssl://test_machine:20",
+	}
 
-    tc := make(chan *tls.Conn)
-    N.TLSListen("127.0.0.1:2001", tc)
+	tc := make(chan *tls.Conn)
+	N.TLSListen("127.0.0.1:2001", tc)
 
-    c2 := N.TLSConnect("127.0.0.1:2001")
-    c1 := <- tc
+	c2 := N.TLSConnect("127.0.0.1:2001")
+	c1 := <-tc
 
-    n, err := c1.Write([]byte("Foo"))
-    if err != nil {
-        t.Fatal(err)
-    }
+	n, err := c1.Write([]byte("Foo"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-    if n == 0 {
-        t.Fatal("No data written")
-    }
+	if n == 0 {
+		t.Fatal("No data written")
+	}
 
-    b := make([]byte, 4)
+	b := make([]byte, 4)
 
-    n, err = c2.Read(b)
-    if err != nil {
-        t.Fatal(err)
-    }
-    if n ==0 {
-        t.Fatal("No data read")
-    }
+	n, err = c2.Read(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n == 0 {
+		t.Fatal("No data read")
+	}
 
-    if b[0] != 'F' {
-        t.Fatalf("Excepted \"Foo\", got %s", string(b))
-    }
+	if b[0] != 'F' {
+		t.Fatalf("Excepted \"Foo\", got %s", string(b))
+	}
 }
