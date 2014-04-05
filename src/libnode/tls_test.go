@@ -22,9 +22,9 @@ func TestTLSConnection(t *testing.T) {
 	}
 
 	tc := make(chan *tls.Conn)
-	N.TLSListen("127.0.0.1:2001", tc)
+	N.tlsListen("127.0.0.1:2001", tc)
 
-	c2 := N.TLSConnect("127.0.0.1:2001")
+	c2 := N.tlsConnect("127.0.0.1:2001")
 	c1 := <-tc
 
 	n, err := c1.Write([]byte("Foo"))

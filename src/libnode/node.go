@@ -15,13 +15,13 @@ type Node struct {
 
 func (n *Node) Listen(address string) {
 	tc := make(chan *tls.Conn)
-	n.TLSListen(address, tc)
+	n.tlsListen(address, tc)
 
 	go n.handleconns(tc)
 }
 
 func (n *Node) Connect(address string) {
-	c := n.TLSConnect(address)
+	c := n.tlsConnect(address)
 	N := NewNeighborNode(c)
 	n.Neighbors[N.Account] = N
 

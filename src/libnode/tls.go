@@ -13,7 +13,7 @@ import (
 import _ "crypto/sha512"
 
 // Listen on an address and wrap incoming connections in TLS
-func (n *Node) TLSListen(address string, t chan *tls.Conn) {
+func (n *Node) tlsListen(address string, t chan *tls.Conn) {
 	rc := make(chan struct{})
 
 	go func(n *Node, rc chan struct{}) {
@@ -30,7 +30,7 @@ func (n *Node) TLSListen(address string, t chan *tls.Conn) {
 			}
 
 			go func(n *Node, c net.Conn, t chan *tls.Conn) {
-				nc := tls.Server(c, n.TLSConfig())
+				nc := tls.Server(c, n.tlsConfig())
 				err = nc.Handshake()
 
 				if err != nil {
@@ -44,18 +44,18 @@ func (n *Node) TLSListen(address string, t chan *tls.Conn) {
 }
 
 // Connect to an address and wrap incoming connections in TLS
-func (n *Node) TLSConnect(address string) *tls.Conn {
-	c, err := tls.Dial("tcp", address, n.TLSConfig())
+func (n *Node) tlsConnect(address string) *tls.Conn {
+	c, err := tls.Dial("tcp", address, n.tlsConfig())
 	if err != nil {
 		panic(err.Error())
 	}
 	return c
 }
 
-// Generate a tls config
-func (n *Node) TLSConfig() *tls.Config {
+// Generate a TLS config
+func (n *Node) tlsConfig() *tls.Config {
 	return &tls.Config{
-		Certificates:             []tls.Certificate{n.CreateTLSCert()},
+		Certificates:             []tls.Certificate{n.tlsCert()},
 		PreferServerCipherSuites: true,
 		SessionTicketsDisabled:   true,
 		MinVersion:               tls.VersionTLS12,
@@ -71,7 +71,7 @@ This function generates TLS certs for a given key id. The cert will be self
 Signed and the DNSNames will contain the location it is listening on. It will
 also expire within 1 hour and should only be used for one connection
 */
-func (n *Node) CreateTLSCert() tls.Certificate {
+func (n *Node) tlsCert() tls.Certificate {
 
 	NotBefore := time.Now().Add(-1 * time.Hour).UTC()
 	NotAfter := time.Now().Add(time.Hour).UTC()
