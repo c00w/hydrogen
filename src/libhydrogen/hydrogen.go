@@ -1,10 +1,14 @@
 package libhydrogen
 
 import (
+	"bytes"
 	"crypto/ecdsa"
-	"libnode"
 	"time"
-    capnp "github.com/glycerine/go-capnproto"
+
+	"libhydrogen/message"
+	"libnode"
+
+	capnp "github.com/glycerine/go-capnproto"
 )
 
 type Hydrogen struct {
@@ -39,15 +43,20 @@ func (h *Hydrogen) handleConns() {
 }
 
 func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
-    buf := new(bytes.Buffer)
-    type seg *capnp.Segment
-    type err error
+	buf := new(bytes.Buffer)
+	var seg *capnp.Segment
+	var err error
 
-    for seg, err = capnp.ReadFromStream(c, buf); err == nil {
+	for {
+		seg, err = capnp.ReadFromStream(c, buf)
+		if err != nil {
+			break
+		}
+		m := message.ReadRootMessage(seg)
+		m = m
+	}
 
-    }:
-
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 }
