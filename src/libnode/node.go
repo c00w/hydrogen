@@ -66,3 +66,7 @@ func (n *Node) ListNeighbors() []string {
 	}
 	return nl
 }
+
+func (n *Node) AddListener(protocol string, c chan *tls.Conn) {
+
+}
