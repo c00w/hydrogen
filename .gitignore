@@ -2,3 +2,4 @@ bin/*
 pkg/*
 *.capnp.go
 *.swp
+src/github.com/*

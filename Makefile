@@ -16,8 +16,7 @@ src/libhydrogen/message.capnp.go: src/libhydrogen/message.capnp bin/capnpc-go
 bin/capnpc-go:
 	go install github.com/glycerine/go-capnproto/capnpc-go
 
-capn:
-	echo "Do not execute this command unless you are purposefully updating the version"
+dependencies:
 	go get -u github.com/glycerine/go-capnproto
 	go get -u github.com/glycerine/go-capnproto/capnpc-go
 
