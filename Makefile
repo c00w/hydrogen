@@ -6,11 +6,12 @@ PLATFORM := linux_amd64
 
 all: bin/hydrogend
 
-test: pkg/${PLATFORM}/libnode.a
+test: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydrogen.a
 	go test libnode
+	go test libhydrogen
 
-src/libnode/message.capnp.go: src/libnode/message.capnp bin/capnpc-go
-	capnp compile -ogo src/libnode/message.capnp
+src/libhydrogen/message.capnp.go: src/libhydrogen/message.capnp bin/capnpc-go
+	capnp compile -ogo src/libhydrogen/message.capnp
 
 bin/capnpc-go:
 	go install github.com/glycerine/go-capnproto/capnpc-go
@@ -20,11 +21,15 @@ capn:
 	go get -u github.com/glycerine/go-capnproto
 	go get -u github.com/glycerine/go-capnproto/capnpc-go
 
-pkg/${PLATFORM}/libnode.a: src/libnode/*.go src/libnode/message.capnp.go
+pkg/${PLATFORM}/libnode.a: src/libnode/*.go
 	go fmt libnode
 	go install libnode
 
-bin/hydrogend: pkg/${PLATFORM}/libnode.a src/hydrogend/*.go
+pkg/${PLATFORM}/libhydrogen.a: src/libhydrogen/*.go src/libhydrogen/message.capnp.go
+	go fmt libhydrogen
+	go install libhydrogen
+
+bin/hydrogend: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydrogen.a src/hydrogend/*.go
 	go fmt hydrogend
 	go install hydrogend
 

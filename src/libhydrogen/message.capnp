@@ -1,7 +1,7 @@
 
 using Go = import "../github.com/glycerine/go-capnproto/go.capnp";
-$Go.package("libnode");
-$Go.import("libnode");
+$Go.package("libhydrogen");
+$Go.import("libhydrogen");
 
 @0xf5151606f45c93ef;
 
