@@ -2,7 +2,7 @@ package libnode
 
 import (
 	"crypto/ecdsa"
-    "crypto/tls"
+	"crypto/tls"
 )
 
 type Node struct {
@@ -10,26 +10,26 @@ type Node struct {
 	Key      *ecdsa.PrivateKey
 	Location string
 
-    Neighbors map[string]*NeighborNode
+	Neighbors map[string]*NeighborNode
 }
 
 func (n *Node) Listen(address string) {
-    tc := make(chan *tls.Conn)
-    n.TLSListen(address, tc)
+	tc := make(chan *tls.Conn)
+	n.TLSListen(address, tc)
 
-    go n.handleconns(tc)
+	go n.handleconns(tc)
 }
 
 func (n *Node) Connect(address string) {
-    c := n.TLSConnect(address)
-    N := NewNeighborNode(c)
-    n.Neighbors[N.Account] = N
+	c := n.TLSConnect(address)
+	N := NewNeighborNode(c)
+	n.Neighbors[N.Account] = N
 
 }
 
 func (n *Node) handleconns(tc chan *tls.Conn) {
-    for c := range(tc) {
-        N := NewNeighborNode(c)
-        n.Neighbors[N.Account] = N
-    }
+	for c := range tc {
+		N := NewNeighborNode(c)
+		n.Neighbors[N.Account] = N
+	}
 }

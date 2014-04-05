@@ -21,9 +21,11 @@ capn:
 	go get -u github.com/glycerine/go-capnproto/capnpc-go
 
 pkg/${PLATFORM}/libnode.a: src/libnode/*.go src/libnode/message.capnp.go
+	go fmt libnode
 	go install libnode
 
 bin/hydrogend: pkg/${PLATFORM}/libnode.a src/hydrogend/*.go
+	go fmt hydrogend
 	go install hydrogend
 
 

@@ -77,15 +77,15 @@ func (n *Node) CreateTLSCert() tls.Certificate {
 	NotAfter := time.Now().Add(time.Hour).UTC()
 
 	template := &x509.Certificate{
-		SerialNumber:          new(big.Int).SetInt64(0),
-		Subject:               pkix.Name{CommonName: n.Account},
-		NotBefore:             NotBefore,
-		NotAfter:              NotAfter,
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		MaxPathLen:            1,
-        IsCA: true,
-        BasicConstraintsValid: true,
+		SerialNumber: new(big.Int).SetInt64(0),
+		Subject:      pkix.Name{CommonName: n.Account},
+		NotBefore:    NotBefore,
+		NotAfter:     NotAfter,
+		KeyUsage:     x509.KeyUsageCertSign | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		MaxPathLen:   1,
+		IsCA:         true,
+		BasicConstraintsValid: true,
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, template, template, &n.Key.PublicKey, n.Key)

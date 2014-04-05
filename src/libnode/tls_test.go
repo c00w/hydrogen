@@ -18,7 +18,7 @@ func TestTLSConnection(t *testing.T) {
 		"account",
 		priv,
 		"ssl://test_machine:20",
-        nil,
+		nil,
 	}
 
 	tc := make(chan *tls.Conn)
@@ -50,5 +50,5 @@ func TestTLSConnection(t *testing.T) {
 		t.Fatalf("Excepted \"Foo\", got %s", string(b))
 	}
 
-    _ = NewNeighborNode(c1)
+	_ = NewNeighborNode(c1)
 }
