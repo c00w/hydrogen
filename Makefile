@@ -6,7 +6,7 @@ PLATFORM := linux_amd64
 
 all: bin/hydrogend
 
-test: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydrogen.a
+test: all
 	go test libnode
 	go test libhydrogen
 
