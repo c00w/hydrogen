@@ -5,6 +5,7 @@ go:
 
 install:
   - make dependencies
+  - export CXX=clang++
   - curl -O http://capnproto.org/capnproto-c++-0.4.1.tar.gz
   - tar zxf capnproto-c++-0.4.1.tar.gz
   - cd capnproto-c++-0.4.1
