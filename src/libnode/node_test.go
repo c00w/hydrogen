@@ -14,12 +14,17 @@ func TestNode(t *testing.T) {
 	}
 
 	N1 := NewNode("account1", priv, "ssl://test_machine:20")
-
+	N1c := make(chan *NeighborNode)
+	N1.AddListener("hydrogen", N1c)
 	N1.Listen("127.0.0.1:2002")
 
 	N2 := NewNode("account2", priv, "ssl://test_machine:20")
+	N2c := make(chan *NeighborNode)
+	N2.AddListener("hydrogen", N2c)
+	go N2.Connect("127.0.0.1:2002")
 
-	N2.Connect("127.0.0.1:2002")
+	<-N2c
+	<-N1c
 
 	ns := N2.ListNeighbors()
 	if len(ns) != 1 {
