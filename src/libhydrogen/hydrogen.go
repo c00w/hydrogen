@@ -2,9 +2,9 @@ package libhydrogen
 
 import (
 	"crypto/ecdsa"
-	"crypto/tls"
 	"libnode"
 	"time"
+    capnp "github.com/glycerine/go-capnproto"
 )
 
 type Hydrogen struct {
@@ -12,7 +12,7 @@ type Hydrogen struct {
 	ledger   *Ledger
 	tau      time.Duration
 	key      *ecdsa.PrivateKey
-	incoming chan *tls.Conn
+	incoming chan *libnode.NeighborNode
 }
 
 func NewHydrogen(n *libnode.Node, account string, key *ecdsa.PrivateKey,
@@ -22,12 +22,12 @@ func NewHydrogen(n *libnode.Node, account string, key *ecdsa.PrivateKey,
 		l,
 		tau,
 		key,
-		make(chan *tls.Conn),
+		make(chan *libnode.NeighborNode),
 	}
 
+	go h.handleConns()
 	n.AddListener("hydrogen", h.incoming)
 
-	go h.handleConns()
 	return h
 
 }
@@ -38,5 +38,16 @@ func (h *Hydrogen) handleConns() {
 	}
 }
 
-func (h *Hydrogen) handleConn(c *tls.Conn) {
+func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
+    buf := new(bytes.Buffer)
+    type seg *capnp.Segment
+    type err error
+
+    for seg, err = capnp.ReadFromStream(c, buf); err == nil {
+
+    }:
+
+    if err != nil {
+        panic(err)
+    }
 }
