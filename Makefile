@@ -32,5 +32,9 @@ bin/hydrogend: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydrogen.a src/hydro
 	go fmt hydrogend
 	go install hydrogend
 
+clean:
+	rm -r bin
+	rm -r pkg
+
 
 
