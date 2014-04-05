@@ -3,6 +3,13 @@ language: go
 go:
   - 1.2
 
-install: make dependencies
+install:
+  - make dependencies
+  - curl -O http://capnproto.org/capnproto-c++-0.4.1.tar.gz
+  - tar zxf capnproto-c++-0.4.1.tar.gz
+  - cd capnproto-c++-0.4.1
+  - ./configure
+  - make -j6 check
+  - mv capnp ../bin/capnp
 
 script: make test
