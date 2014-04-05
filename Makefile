@@ -10,8 +10,8 @@ test: all
 	go test libnode
 	go test libhydrogen
 
-src/libhydrogen/message.capnp.go: src/libhydrogen/message.capnp bin/capnpc-go
-	capnp compile -ogo src/libhydrogen/message.capnp
+src/libhydrogen/message/message.capnp.go: src/libhydrogen/message/message.capnp bin/capnpc-go
+	capnp compile -ogo src/libhydrogen/message/message.capnp
 
 bin/capnpc-go:
 	go install github.com/glycerine/go-capnproto/capnpc-go
@@ -24,7 +24,11 @@ pkg/${PLATFORM}/libnode.a: src/libnode/*.go
 	go fmt libnode
 	go install libnode
 
-pkg/${PLATFORM}/libhydrogen.a: src/libhydrogen/*.go src/libhydrogen/message.capnp.go
+pkg/${PLATFORM}/libhydrogen/message.a: src/libhydrogen/message/message.capnp.go
+	go fmt libhydrogen/message
+	go install libhydrogen/message
+
+pkg/${PLATFORM}/libhydrogen.a: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydrogen/message.a
 	go fmt libhydrogen
 	go install libhydrogen
 

@@ -1,7 +1,7 @@
 
-using Go = import "../github.com/glycerine/go-capnproto/go.capnp";
-$Go.package("libhydrogen");
-$Go.import("libhydrogen");
+using Go = import "../../github.com/glycerine/go-capnproto/go.capnp";
+$Go.package("message");
+$Go.import("message");
 
 @0xf5151606f45c93ef;
 
