@@ -18,6 +18,7 @@ func TestTLSConnection(t *testing.T) {
 		"account",
 		priv,
 		"ssl://test_machine:20",
+        nil,
 	}
 
 	tc := make(chan *tls.Conn)

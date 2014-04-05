@@ -8,6 +8,7 @@ import (
 // A connection to a neighbor
 type NeighborNode struct {
 	c *tls.Conn
+    Account string
 }
 
 func verifySigned(c *tls.Conn) error {
@@ -45,5 +46,10 @@ func NewNeighborNode(c *tls.Conn) *NeighborNode {
 
 	n := new(NeighborNode)
 	n.c = c
+    n.Account = n.account()
 	return n
+}
+
+func (n *NeighborNode) account() string {
+    return n.c.ConnectionState().PeerCertificates[0].Subject.CommonName
 }
