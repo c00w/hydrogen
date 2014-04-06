@@ -3,6 +3,7 @@ package libhydrogen
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/sha512"
 	"time"
 
 	"libhydrogen/message"
@@ -53,7 +54,9 @@ func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
 			break
 		}
 		m := message.ReadRootMessage(seg)
-		m = m
+		if !m.Verify(h.ledger, sha512.New()) {
+
+		}
 	}
 
 	if err != nil {

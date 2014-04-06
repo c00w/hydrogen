@@ -6,17 +6,26 @@ $Go.import("message");
 @0xf5151606f45c93ef;
 
 struct Authorization {
-    account @0: Data;
+    account @0: Text;
     signatures @1: List(KeySignature);
 }
 
+struct Key {
+    x @0: Data;
+    y @1: Data;
+}
+
+struct Signature {
+    r @0: Data;
+    s @1: Data;
+}
+
 struct KeySignature{
-    key @0: Data;
-    signature @1: Data;
+    key @0: Key;
+    signature @1: Signature;
 }
 
 struct Time {
-    #UTC
     seconds @0: UInt64;
     nanoSeconds @1: UInt32;
 }
@@ -69,7 +78,7 @@ struct Change {
 struct Vote {
     votes @0: List(Change);
     time @1: Time;
-    authorization @2: KeySignature;
+    authorization @2: Authorization;
 }
 
 struct Message {
@@ -77,6 +86,6 @@ struct Message {
         vote @0: Vote;
         change @1: Change;
     }
-    authchain @2: List(KeySignature);
+    authchain @2: List(Authorization);
 }
 

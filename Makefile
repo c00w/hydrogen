@@ -24,7 +24,7 @@ pkg/${PLATFORM}/libnode.a: src/libnode/*.go
 	go fmt libnode
 	go install libnode
 
-pkg/${PLATFORM}/libhydrogen/message.a: src/libhydrogen/message/message.capnp.go
+pkg/${PLATFORM}/libhydrogen/message.a: src/libhydrogen/message/message.capnp.go src/libhydrogen/message/*.go
 	go fmt libhydrogen/message
 	go install libhydrogen/message
 
