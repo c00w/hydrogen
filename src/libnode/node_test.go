@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"io"
 	"testing"
 )
 
@@ -33,7 +34,7 @@ func TestNode(t *testing.T) {
 
 	N2.GetNeighbor("account1").Write([]byte("Foo"))
 	b := make([]byte, 4)
-	N1.GetNeighbor("account2").Read(b)
+	io.ReadAtLeast(N1.GetNeighbor("account2"), b, 1)
 
 	if b[0] != 'F' {
 		t.Fatal("Expected leading F got %s", b)

@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/tls"
+	"io"
 	"testing"
 )
 
@@ -33,7 +34,7 @@ func TestTLSConnection(t *testing.T) {
 
 	b := make([]byte, 4)
 
-	n, err = c2.Read(b)
+	_, err = io.ReadAtLeast(c2, b, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,6 +45,4 @@ func TestTLSConnection(t *testing.T) {
 	if b[0] != 'F' {
 		t.Fatalf("Excepted \"Foo\", got %s", string(b))
 	}
-
-	_ = NewNeighborNode(c1)
 }
