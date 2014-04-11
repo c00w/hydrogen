@@ -11,7 +11,7 @@ type Verifier interface {
 func (m Message) Verify(l Verifier, h hash.Hash) error {
 	m.Payload().Hash(h)
 	for _, ks := range m.AuthChain().ToArray() {
-        if err := l.Verify(ks, h.Sum(nil)); err != nil {
+		if err := l.Verify(ks, h.Sum(nil)); err != nil {
 			return err
 		}
 		ks.Hash(h)

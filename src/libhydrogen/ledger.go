@@ -3,8 +3,8 @@ package libhydrogen
 import (
 	"crypto/ecdsa"
 	"crypto/sha512"
-    "errors"
-    "fmt"
+	"errors"
+	"fmt"
 
 	"libhydrogen/message"
 )
@@ -33,11 +33,11 @@ func (l *Ledger) Verify(auth message.Authorization, hash []byte) error {
 
 	key := ks.Key().ECDSA()
 	r, s := ks.Signature().Parse()
-    ok := ecdsa.Verify(key, hash, r, s)
-    if !ok {
-        return errors.New("ecdsa verification failed")
-    }
-    return nil
+	ok := ecdsa.Verify(key, hash, r, s)
+	if !ok {
+		return errors.New("ecdsa verification failed")
+	}
+	return nil
 }
 
 func (l *Ledger) AddEntry(account string, key string, location string) {

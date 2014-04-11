@@ -5,8 +5,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/sha512"
 	"hash"
+	"log"
 	"time"
-    "log"
 
 	"libhydrogen/message"
 	"libnode"
@@ -59,9 +59,9 @@ func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
 		}
 		m := message.ReadRootMessage(seg)
 		s := sha512.New()
-        if err := m.Verify(h.ledger, s); err != nil {
-            log.Printf("Node %s: %s", h.node.Account, err)
-            panic(err)
+		if err := m.Verify(h.ledger, s); err != nil {
+			log.Printf("Node %s: %s", h.node.Account, err)
+			panic(err)
 			continue
 		}
 		go h.HandleMessage(m, s)
@@ -85,19 +85,18 @@ func (h *Hydrogen) CreateMessageFromChange(c message.Change) *capnp.Segment {
 	al := message.NewAuthorizationList(n, 1)
 	capnp.PointerList(al).Set(0, capnp.Object(a))
 
-    m.SetAuthChain(al)
-    return n
+	m.SetAuthChain(al)
+	return n
 }
 
 func (h *Hydrogen) SendChange(c message.Change) {
 
-    n := h.CreateMessageFromChange(c)
+	n := h.CreateMessageFromChange(c)
 
 	for _, name := range h.node.ListNeighbors() {
 		n.WriteTo(h.node.GetNeighbor(name))
 	}
 }
-
 
 func (h *Hydrogen) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {
 
@@ -123,12 +122,12 @@ func (h *Hydrogen) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.S
 		m2.Payload().SetChange(m.Payload().Change())
 	}
 
-    return n, m2
+	return n, m2
 }
 
 func (h *Hydrogen) HandleMessage(m message.Message, run hash.Hash) {
 
-    n, _ := h.AppendAuthMessage(m, run)
+	n, _ := h.AppendAuthMessage(m, run)
 
 	seen := make(map[string]bool)
 
