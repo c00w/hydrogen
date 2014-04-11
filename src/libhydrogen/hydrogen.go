@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"hash"
 	"time"
+    "log"
 
 	"libhydrogen/message"
 	"libnode"
@@ -58,8 +59,9 @@ func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
 		}
 		m := message.ReadRootMessage(seg)
 		s := sha512.New()
-		if !m.Verify(h.ledger, s) {
-			panic("DOES NOT VERIFY")
+        if err := m.Verify(h.ledger, s); err != nil {
+            log.Printf("Node %s: %s", h.node.Account, err)
+            panic(err)
 			continue
 		}
 		go h.HandleMessage(m, s)
@@ -69,7 +71,7 @@ func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
 	}
 }
 
-func (h *Hydrogen) SendChange(c message.Change) {
+func (h *Hydrogen) CreateMessageFromChange(c message.Change) *capnp.Segment {
 	n := capnp.NewBuffer(nil)
 
 	m := message.NewRootMessage(n)
@@ -83,14 +85,25 @@ func (h *Hydrogen) SendChange(c message.Change) {
 	al := message.NewAuthorizationList(n, 1)
 	capnp.PointerList(al).Set(0, capnp.Object(a))
 
+    m.SetAuthChain(al)
+    return n
+}
+
+func (h *Hydrogen) SendChange(c message.Change) {
+
+    n := h.CreateMessageFromChange(c)
+
 	for _, name := range h.node.ListNeighbors() {
 		n.WriteTo(h.node.GetNeighbor(name))
 	}
 }
 
-func (h *Hydrogen) HandleMessage(m message.Message, run hash.Hash) {
+
+func (h *Hydrogen) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {
 
 	n := capnp.NewBuffer(nil)
+
+	m2 := message.NewRootMessage(n)
 
 	l := message.NewAuthorizationList(n, m.AuthChain().Len()+1)
 	for i, v := range m.AuthChain().ToArray() {
@@ -101,14 +114,21 @@ func (h *Hydrogen) HandleMessage(m message.Message, run hash.Hash) {
 
 	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
 
-	m2 := message.NewRootMessage(n)
+	m2.SetAuthChain(l)
+
 	switch m.Payload().Which() {
 	case message.MESSAGEPAYLOAD_VOTE:
 		m2.Payload().SetVote(m.Payload().Vote())
 	case message.MESSAGEPAYLOAD_CHANGE:
 		m2.Payload().SetChange(m.Payload().Change())
 	}
-	m2.SetAuthChain(l)
+
+    return n, m2
+}
+
+func (h *Hydrogen) HandleMessage(m message.Message, run hash.Hash) {
+
+    n, _ := h.AppendAuthMessage(m, run)
 
 	seen := make(map[string]bool)
 

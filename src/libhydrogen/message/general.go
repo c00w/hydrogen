@@ -5,19 +5,19 @@ import (
 )
 
 type Verifier interface {
-	Verify(ks Authorization, hash []byte) bool
+	Verify(ks Authorization, hash []byte) error
 }
 
-func (m Message) Verify(l Verifier, h hash.Hash) bool {
+func (m Message) Verify(l Verifier, h hash.Hash) error {
 	m.Payload().Hash(h)
 	for _, ks := range m.AuthChain().ToArray() {
-		if !l.Verify(ks, h.Sum(nil)) {
-			return false
+        if err := l.Verify(ks, h.Sum(nil)); err != nil {
+			return err
 		}
 		ks.Hash(h)
 	}
 
-	return true
+	return nil
 }
 
 func (m MessagePayload) Hash(h hash.Hash) {
