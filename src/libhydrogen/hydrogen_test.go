@@ -92,5 +92,8 @@ func TestMessagePassing(t *testing.T) {
     c := message.NewChange(n)
 
     h1.SendChange(c)
-    <- tc
+    m := <- tc
+    if m.AuthChain().Len() != 2 {
+        t.Fatal("message was not setup correctly")
+    }
 }
