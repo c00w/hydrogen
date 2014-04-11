@@ -33,3 +33,7 @@ func (l *Ledger) Verify(auth message.Authorization, hash []byte) bool {
 	r, s := ks.Signature().Parse()
 	return ecdsa.Verify(key, hash, r, s)
 }
+
+func (l *Ledger) AddEntry(account string, key string, location string) {
+	l.Accounts[account] = &Account{account, key, location, 0}
+}

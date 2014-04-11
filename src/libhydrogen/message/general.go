@@ -10,7 +10,7 @@ type Verifier interface {
 
 func (m Message) Verify(l Verifier, h hash.Hash) bool {
 	m.Payload().Hash(h)
-	for _, ks := range m.Authchain().ToArray() {
+	for _, ks := range m.AuthChain().ToArray() {
 		if !l.Verify(ks, h.Sum(nil)) {
 			return false
 		}

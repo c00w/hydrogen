@@ -86,6 +86,6 @@ struct Message {
         vote @0: Vote;
         change @1: Change;
     }
-    authchain @2: List(Authorization);
+    authChain @2: List(Authorization);
 }
 

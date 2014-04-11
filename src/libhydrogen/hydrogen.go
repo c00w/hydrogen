@@ -3,7 +3,8 @@ package libhydrogen
 import (
 	"bytes"
 	"crypto/ecdsa"
-    "crypto/sha512"
+	"crypto/sha512"
+	"hash"
 	"time"
 
 	"libhydrogen/message"
@@ -18,9 +19,10 @@ type Hydrogen struct {
 	tau      time.Duration
 	key      *ecdsa.PrivateKey
 	incoming chan *libnode.NeighborNode
+	outgoing chan message.Message
 }
 
-func NewHydrogen(n *libnode.Node, account string, key *ecdsa.PrivateKey,
+func NewHydrogen(n *libnode.Node, key *ecdsa.PrivateKey,
 	l *Ledger, tau time.Duration) *Hydrogen {
 	h := &Hydrogen{
 		n,
@@ -28,6 +30,7 @@ func NewHydrogen(n *libnode.Node, account string, key *ecdsa.PrivateKey,
 		tau,
 		key,
 		make(chan *libnode.NeighborNode),
+		nil,
 	}
 
 	go h.handleConns()
@@ -51,71 +54,71 @@ func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
 	for {
 		seg, err = capnp.ReadFromStream(c, buf)
 		if err != nil {
-			break
+			panic(err)
 		}
 		m := message.ReadRootMessage(seg)
-        s = sha512.New()
-        if !m.Verify(h.ledger, s) {
-            continue
-        }
-        h.HandleMessage(m, s)
-	}
-
-	if err != nil {
-		panic(err)
+		s := sha512.New()
+		if !m.Verify(h.ledger, s) {
+			panic("DOES NOT VERIFY")
+			continue
+		}
+		go h.HandleMessage(m, s)
+		if h.outgoing != nil {
+			h.outgoing <- m
+		}
 	}
 }
 
-func (h *Hydrogen) HandleMessage(m message.Message, s hash.Hash) {
+func (h *Hydrogen) SendChange(c message.Change) {
+	n := capnp.NewBuffer(nil)
 
-    n := capnp.NewBuffer(nil)
-    
-    l := message.NewAuthorizationList(n, m.Authchain().Len()+1)
-    for i, v := range(message.Authchain().ToArray()) {
-        capnp.PointerList(l).Set(i, capnp.Object(v))
-    }
+	m := message.NewRootMessage(n)
+	m.Payload().SetChange(c)
 
-    key := NewKey(n)
-    key.SetX(h.key.X.Bytes())
-    key.SetY(h.key.Y.Bytes())
+	run := sha512.New()
+	c.Hash(run)
 
-    r, s, err := ecdsa.Sign(rand, h.key, s.Sum())
+	a := message.NewSignedAuthorization(n, h.node.Account, h.key, run.Sum(nil))
 
-    sig := message.NewSignature(n)
-    sig.SetR(r.Bytes())
-    sig.SetS(r.Bytes())
+	al := message.NewAuthorizationList(n, 1)
+	capnp.PointerList(al).Set(0, capnp.Object(a))
 
-    keysig := Message.NewKeySignature(n)
-    keysig.SetKey(key)
-    keysig.SetSignature(sig)
+	for _, name := range h.node.ListNeighbors() {
+		n.WriteTo(h.node.GetNeighbor(name))
+	}
+}
 
-    sl := message.NewKeySignatureList(n, 1)
-    capnp.PointerList(sl).Set(0, capnp.Object(keysig))
+func (h *Hydrogen) HandleMessage(m message.Message, run hash.Hash) {
 
-    a := NewAuthorization(n)
-    a.SetAccount(h.Account)
-    a.SetKeySignatureList(l)
+	n := capnp.NewBuffer(nil)
 
-    capnp.PointerList(l).Set(0, capnp.Object(a))
+	l := message.NewAuthorizationList(n, m.AuthChain().Len()+1)
+	for i, v := range m.AuthChain().ToArray() {
+		capnp.PointerList(l).Set(i, capnp.Object(v))
+	}
 
-    m2 := message.NewRootMessage(n)
-    switch m.Payload().Which() {
-        case message.MESSAGEPAYLOAD_VOTE:
-            m2.Payload().SetVote(m.Payload().Vote())
-        case message.MESSAGEPAYLOAD_CHANGE:
-            m2.Payload().SetChane(m.Payload().Vote())
-    }
-    m2.SetAuthChain(l)
+	a := message.NewSignedAuthorization(n, h.node.Account, h.key, run.Sum(nil))
 
-    s := make(map[string]bool)
+	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
 
-    for _, a := range(m.AuthChain().ToArray()) {
-        s.[a.Account()] = true
-    }
+	m2 := message.NewRootMessage(n)
+	switch m.Payload().Which() {
+	case message.MESSAGEPAYLOAD_VOTE:
+		m2.Payload().SetVote(m.Payload().Vote())
+	case message.MESSAGEPAYLOAD_CHANGE:
+		m2.Payload().SetChange(m.Payload().Change())
+	}
+	m2.SetAuthChain(l)
 
-    for _, h := h.Node.ListNeighbors() {
-        if !s[h.Account] {
-            m2.WriteTo(h)
-        }
-    }
+	seen := make(map[string]bool)
+
+	for _, a := range m.AuthChain().ToArray() {
+		seen[a.Account()] = true
+	}
+
+	for _, name := range h.node.ListNeighbors() {
+		if !seen[name] {
+			n.WriteTo(h.node.GetNeighbor(name))
+		}
+	}
 }

@@ -1,18 +1,14 @@
 package libnode
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"io"
 	"testing"
+
+	"util"
 )
 
 func TestNode(t *testing.T) {
-	priv, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
-	if err != nil {
-		t.Fatal(err)
-	}
+	priv := util.GenKey()
 
 	N1 := NewNode("account1", priv, "ssl://test_machine:20")
 	N1c := make(chan *NeighborNode)

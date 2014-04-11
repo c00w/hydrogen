@@ -4,5 +4,5 @@ type Account struct {
 	ID       string
 	Key      string
 	Location string
-	Balance  string
+	Balance  uint64
 }
