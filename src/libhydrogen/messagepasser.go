@@ -45,13 +45,13 @@ func NewMessagePasser(n *libnode.Node, key *ecdsa.PrivateKey,
 
 }
 
-func (h *MessagePasser) handleConns() {
-	for c := range h.newNeighbor {
-		go h.handleConn(c)
+func (mp *MessagePasser) handleConns() {
+	for c := range mp.newNeighbor {
+		go mp.handleConn(c)
 	}
 }
 
-func (h *MessagePasser) handleConn(c *libnode.NeighborNode) {
+func (mp *MessagePasser) handleConn(c *libnode.NeighborNode) {
 	buf := new(bytes.Buffer)
 	var seg *capnp.Segment
 	var err error
@@ -63,23 +63,23 @@ func (h *MessagePasser) handleConn(c *libnode.NeighborNode) {
 		}
 		m := message.ReadRootMessage(seg)
 		s := sha512.New()
-		if err := m.Verify(h.verifier, s); err != nil {
-			log.Printf("Node %s: %s", h.node.Account, err)
+		if err := m.Verify(mp.verifier, s); err != nil {
+			log.Printf("Node %s: %s", mp.node.Account, err)
 			panic(err)
 			continue
 		}
-		go h.passMessage(m, s)
-		h.newMessage <- m
+		go mp.passMessage(m, s)
+		mp.newMessage <- m
 	}
 }
 
-func (h *MessagePasser) handleMessages() {
-	for m := range h.newMessage {
-		h.handler.Handle(m)
+func (mp *MessagePasser) handleMessages() {
+	for m := range mp.newMessage {
+		mp.handler.Handle(m)
 	}
 }
 
-func (h *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segment {
+func (mp *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segment {
 	n := capnp.NewBuffer(nil)
 
 	m := message.NewRootMessage(n)
@@ -88,7 +88,7 @@ func (h *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segment
 	run := sha512.New()
 	c.Hash(run)
 
-	a := message.NewSignedAuthorization(n, h.node.Account, h.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.node.Account, mp.key, run.Sum(nil))
 
 	al := message.NewAuthorizationList(n, 1)
 	capnp.PointerList(al).Set(0, capnp.Object(a))
@@ -97,16 +97,16 @@ func (h *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segment
 	return n
 }
 
-func (h *MessagePasser) SendChange(c message.Change) {
+func (mp *MessagePasser) SendChange(c message.Change) {
 
-	n := h.CreateMessageFromChange(c)
+	n := mp.CreateMessageFromChange(c)
 
-	for _, name := range h.node.ListNeighbors() {
-		n.WriteTo(h.node.GetNeighbor(name))
+	for _, name := range mp.node.ListNeighbors() {
+		n.WriteTo(mp.node.GetNeighbor(name))
 	}
 }
 
-func (h *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {
+func (mp *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {
 
 	n := capnp.NewBuffer(nil)
 
@@ -117,7 +117,7 @@ func (h *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*ca
 		capnp.PointerList(l).Set(i, capnp.Object(v))
 	}
 
-	a := message.NewSignedAuthorization(n, h.node.Account, h.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.node.Account, mp.key, run.Sum(nil))
 
 	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
 
@@ -133,9 +133,9 @@ func (h *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*ca
 	return n, m2
 }
 
-func (h *MessagePasser) passMessage(m message.Message, run hash.Hash) {
+func (mp *MessagePasser) passMessage(m message.Message, run hash.Hash) {
 
-	n, _ := h.AppendAuthMessage(m, run)
+	n, _ := mp.AppendAuthMessage(m, run)
 
 	seen := make(map[string]bool)
 
@@ -143,9 +143,9 @@ func (h *MessagePasser) passMessage(m message.Message, run hash.Hash) {
 		seen[a.Account()] = true
 	}
 
-	for _, name := range h.node.ListNeighbors() {
+	for _, name := range mp.node.ListNeighbors() {
 		if !seen[name] {
-			n.WriteTo(h.node.GetNeighbor(name))
+			n.WriteTo(mp.node.GetNeighbor(name))
 		}
 	}
 }
