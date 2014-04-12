@@ -14,7 +14,7 @@ import (
 	capnp "github.com/glycerine/go-capnproto"
 )
 
-type Hydrogen struct {
+type MessagePasser struct {
 	node     *libnode.Node
 	ledger   *Ledger
 	tau      time.Duration
@@ -23,9 +23,9 @@ type Hydrogen struct {
 	outgoing chan message.Message
 }
 
-func NewHydrogen(n *libnode.Node, key *ecdsa.PrivateKey,
-	l *Ledger, tau time.Duration) *Hydrogen {
-	h := &Hydrogen{
+func NewMessagePasser(n *libnode.Node, key *ecdsa.PrivateKey,
+	l *Ledger, tau time.Duration) *MessagePasser {
+	h := &MessagePasser{
 		n,
 		l,
 		tau,
@@ -41,13 +41,13 @@ func NewHydrogen(n *libnode.Node, key *ecdsa.PrivateKey,
 
 }
 
-func (h *Hydrogen) handleConns() {
+func (h *MessagePasser) handleConns() {
 	for c := range h.incoming {
 		go h.handleConn(c)
 	}
 }
 
-func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
+func (h *MessagePasser) handleConn(c *libnode.NeighborNode) {
 	buf := new(bytes.Buffer)
 	var seg *capnp.Segment
 	var err error
@@ -71,7 +71,7 @@ func (h *Hydrogen) handleConn(c *libnode.NeighborNode) {
 	}
 }
 
-func (h *Hydrogen) CreateMessageFromChange(c message.Change) *capnp.Segment {
+func (h *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segment {
 	n := capnp.NewBuffer(nil)
 
 	m := message.NewRootMessage(n)
@@ -89,7 +89,7 @@ func (h *Hydrogen) CreateMessageFromChange(c message.Change) *capnp.Segment {
 	return n
 }
 
-func (h *Hydrogen) SendChange(c message.Change) {
+func (h *MessagePasser) SendChange(c message.Change) {
 
 	n := h.CreateMessageFromChange(c)
 
@@ -98,7 +98,7 @@ func (h *Hydrogen) SendChange(c message.Change) {
 	}
 }
 
-func (h *Hydrogen) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {
+func (h *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {
 
 	n := capnp.NewBuffer(nil)
 
@@ -125,7 +125,7 @@ func (h *Hydrogen) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.S
 	return n, m2
 }
 
-func (h *Hydrogen) HandleMessage(m message.Message, run hash.Hash) {
+func (h *MessagePasser) HandleMessage(m message.Message, run hash.Hash) {
 
 	n, _ := h.AppendAuthMessage(m, run)
 
