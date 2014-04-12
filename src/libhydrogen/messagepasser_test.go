@@ -11,6 +11,14 @@ import (
 	capnp "github.com/glycerine/go-capnproto"
 )
 
+type nullhandler struct{}
+
+func (n nullhandler) Handle(m message.Message) {}
+
+type channelhandler chan message.Message
+
+func (c channelhandler) Handle(m message.Message) { c <- m }
+
 func TestMessageManipulation(t *testing.T) {
 	key1 := util.GenKey()
 	key2 := util.GenKey()
@@ -22,8 +30,8 @@ func TestMessageManipulation(t *testing.T) {
 	l.AddEntry("node1", util.KeyString(key1), "location1")
 	l.AddEntry("node2", util.KeyString(key2), "location2")
 
-	h1 := NewMessagePasser(n1, key1, l, 1)
-	h2 := NewMessagePasser(n2, key2, l, 1)
+	h1 := NewMessagePasser(n1, key1, l, nullhandler{})
+	h2 := NewMessagePasser(n2, key2, l, nullhandler{})
 
 	s1 := capnp.NewBuffer(nil)
 	c := message.NewChange(s1)
@@ -31,7 +39,7 @@ func TestMessageManipulation(t *testing.T) {
 	s2 := h1.CreateMessageFromChange(c)
 	m := message.ReadRootMessage(s2)
 
-	err := m.Verify(h1.ledger, sha512.New())
+	err := m.Verify(l, sha512.New())
 	if err != nil {
 		t.Fatalf("Verifying failed: %s", err.Error())
 	}
@@ -75,12 +83,11 @@ func TestMessagePassing(t *testing.T) {
 	l.AddEntry("node2", util.KeyString(key2), "location2")
 	l.AddEntry("node3", util.KeyString(key3), "location3")
 
-	h1 := NewMessagePasser(n1, key1, l, 1)
-	NewMessagePasser(n2, key2, l, 1)
-	h3 := NewMessagePasser(n3, key3, l, 1)
-
 	tc := make(chan message.Message)
-	h3.outgoing = tc
+
+	h1 := NewMessagePasser(n1, key1, l, nullhandler{})
+	NewMessagePasser(n2, key2, l, nullhandler{})
+	NewMessagePasser(n3, key3, l, channelhandler(tc))
 
 	n1.Listen("127.0.0.1:3001")
 	n2.Listen("127.0.0.1:3002")
