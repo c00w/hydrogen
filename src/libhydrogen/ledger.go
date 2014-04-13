@@ -49,9 +49,19 @@ func (l *Ledger) Apply(message.Change) error {
 }
 
 func (l *Ledger) HostCount() uint {
-	return 0
+    i := uint(0)
+    for _, a := range(l.Accounts) {
+        if a.Location != "" {
+            i += 1
+        }
+    }
+	return i
 }
 
 func (l *Ledger) Copy() *Ledger {
-	return l
+    nl := &Ledger{make(map[string}*Account)}
+    for k,v := range(l.Accounts) {
+        nl.Accounts[k] = v
+    }
+	return nl
 }
