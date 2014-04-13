@@ -62,7 +62,7 @@ struct RateChange {
 
 struct Change {
 
-    authorization @0: KeySignature;
+    authorization @0: Authorization;
     created @1: Time;
 
     type :union {
