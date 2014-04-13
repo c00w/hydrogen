@@ -14,24 +14,23 @@ import (
 )
 
 type Handler interface {
+	message.Verifier
 	Handle(m message.Message)
 }
 
 type MessagePasser struct {
 	node        *libnode.Node
 	key         *ecdsa.PrivateKey
-	verifier    message.Verifier
 	handler     Handler
 	newNeighbor chan *libnode.NeighborNode
 	newMessage  chan message.Message
 }
 
 func NewMessagePasser(n *libnode.Node, key *ecdsa.PrivateKey,
-	v message.Verifier, h Handler) *MessagePasser {
+	h Handler) *MessagePasser {
 	mp := &MessagePasser{
 		n,
 		key,
-		v,
 		h,
 		make(chan *libnode.NeighborNode),
 		make(chan message.Message),
@@ -63,7 +62,7 @@ func (mp *MessagePasser) handleConn(c *libnode.NeighborNode) {
 		}
 		m := message.ReadRootMessage(seg)
 		s := sha512.New()
-		if err := m.Verify(mp.verifier, s); err != nil {
+		if err := m.Verify(mp.handler, s); err != nil {
 			log.Printf("Node %s: %s", mp.node.Account, err)
 			panic(err)
 			continue
@@ -100,6 +99,33 @@ func (mp *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segmen
 func (mp *MessagePasser) SendChange(c message.Change) {
 
 	n := mp.CreateMessageFromChange(c)
+
+	for _, name := range mp.node.ListNeighbors() {
+		n.WriteTo(mp.node.GetNeighbor(name))
+	}
+}
+
+func (mp *MessagePasser) CreateMessageFromVote(v message.Vote) *capnp.Segment {
+	n := capnp.NewBuffer(nil)
+
+	m := message.NewRootMessage(n)
+	m.Payload().SetVote(v)
+
+	run := sha512.New()
+	v.Hash(run)
+
+	a := message.NewSignedAuthorization(n, mp.node.Account, mp.key, run.Sum(nil))
+
+	al := message.NewAuthorizationList(n, 1)
+	capnp.PointerList(al).Set(0, capnp.Object(a))
+
+	m.SetAuthChain(al)
+	return n
+}
+
+func (mp *MessagePasser) SendVote(v message.Vote) {
+
+	n := mp.CreateMessageFromVote(v)
 
 	for _, name := range mp.node.ListNeighbors() {
 		n.WriteTo(mp.node.GetNeighbor(name))

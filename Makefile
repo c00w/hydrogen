@@ -7,8 +7,8 @@ PLATFORM := linux_amd64
 all: bin/hydrogend
 
 test: all
-	go test libnode
-	go test libhydrogen
+	go test libnode -race
+	go test libhydrogen -race
 
 src/libhydrogen/message/message.capnp.go: src/libhydrogen/message/message.capnp bin/capnpc-go
 	capnp compile -ogo src/libhydrogen/message/message.capnp

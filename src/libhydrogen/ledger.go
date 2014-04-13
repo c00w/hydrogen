@@ -43,3 +43,15 @@ func (l *Ledger) Verify(auth message.Authorization, hash []byte) error {
 func (l *Ledger) AddEntry(account string, key string, location string) {
 	l.Accounts[account] = &Account{account, key, location, 0}
 }
+
+func (l *Ledger) Apply(message.Change) error {
+	return nil
+}
+
+func (l *Ledger) HostCount() uint {
+	return 0
+}
+
+func (l *Ledger) Copy() *Ledger {
+	return l
+}

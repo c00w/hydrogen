@@ -2,6 +2,7 @@ package message
 
 import (
 	"hash"
+	"time"
 )
 
 type Verifier interface {
@@ -33,6 +34,16 @@ func (m MessagePayload) Hash(h hash.Hash) {
 func (t Time) Hash(h hash.Hash) {
 	h.Write(uint64toba(t.Seconds()))
 	h.Write(uint32toba(t.NanoSeconds()))
+}
+
+func (t Time) Time() time.Time {
+	return time.Unix(int64(t.Seconds()), int64(t.NanoSeconds()))
+}
+
+func (t Time) SetTime(o time.Time) {
+	o = o.UTC()
+	t.SetSeconds(uint64(o.Unix()))
+	t.SetNanoSeconds(uint32(o.Nanosecond()))
 }
 
 func (v Vote) Hash(h hash.Hash) {
