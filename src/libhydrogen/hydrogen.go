@@ -26,12 +26,18 @@ type Hydrogen struct {
 }
 
 func NewHydrogen(l *Ledger, b *BlockTimer) *Hydrogen {
-    return &Hydrogen{l, nil, make(chan message.Vote),
+    h := &Hydrogen{l, nil, make(chan message.Vote),
                         nil, make(chan message.Change), b, nil}
+    go h.eventloop()
+    return h
 }
 
 func (h *Hydrogen) RegisterBus(mp *MessagePasser) {
     h.mp = mp
+}
+
+func (h *Hydrogen) Verify(ks message.Authorization, hash []byte) error {
+    return h.currentledger.Verify(ks, hash)
 }
 
 func (h *Hydrogen) Handle(m message.Message) {
@@ -43,7 +49,6 @@ func (h *Hydrogen) Handle(m message.Message) {
 	default:
 		log.Print("unknown message payload type")
 	}
-
 }
 
 func (h *Hydrogen) handleVote(v message.Vote) {
