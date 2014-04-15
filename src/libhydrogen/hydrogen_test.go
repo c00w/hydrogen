@@ -4,6 +4,7 @@ import (
     "testing"
     "time"
 
+    "libhydrogen/message"
     "libnode"
     "util"
 )
@@ -33,8 +34,8 @@ func TestHydrogen(t *testing.T) {
     NewMessagePasser(n1, key1, h1)
     NewMessagePasser(n2, key2, h2)
 
-    tc1 := make(chan struct{})
-    tc2 := make(chan struct{})
+    tc1 := make(chan []message.Vote)
+    tc2 := make(chan []message.Vote)
 
     h1.newblock = tc1
     h2.newblock = tc2
@@ -42,8 +43,18 @@ func TestHydrogen(t *testing.T) {
     <-tc1
     <-tc2
 
-    <-tc1
-    <-tc2
+    v1 := <-tc1
+    v2 := <-tc2
+
+    if len(v1) != 2 {
+        t.Log(v1[0].Authorization().Account())
+        t.Fatalf("Not enough votes %s", len(v1))
+    }
+
+    if len(v2) != 2 {
+        t.Log(v1[0].Authorization().Account())
+        t.Fatalf("Not enough votes %s", len(v2))
+    }
 
 }
 
