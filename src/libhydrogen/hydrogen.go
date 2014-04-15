@@ -23,11 +23,13 @@ type Hydrogen struct {
 	blocktimer *BlockTimer
 
 	mp *MessagePasser
+
+    newblock chan struct{}
 }
 
 func NewHydrogen(l *Ledger, b *BlockTimer) *Hydrogen {
     h := &Hydrogen{l, nil, make(chan message.Vote),
-                        nil, make(chan message.Change), b, nil}
+                        nil, make(chan message.Change), b, nil, nil}
     go h.eventloop()
     return h
 }
@@ -76,6 +78,10 @@ func (h *Hydrogen) eventloop() {
 			h.changes = h.validateChanges()
 			vote := h.createVote()
 			h.mp.SendVote(vote)
+            select {
+            case h.newblock <- struct{}{}:
+            default:
+            }
 		}
 	}
 }
