@@ -42,8 +42,7 @@ func (b *BlockTimer) DecreaseTau() {
 }
 
 func (b *BlockTimer) setupTimer() {
-	wait := b.lasttime.Sub(time.Now())
-	wait = time.Duration(wait.Nanoseconds() % b.tau.Nanoseconds())
+	wait := time.Duration(b.tau.Nanoseconds() - (time.Now().Sub(b.lasttime).Nanoseconds() % b.tau.Nanoseconds()))
 	b.currenttimer = time.AfterFunc(wait, b.timerFired)
 }
 
