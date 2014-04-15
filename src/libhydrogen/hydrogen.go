@@ -20,9 +20,18 @@ type Hydrogen struct {
 	changes   []message.Change
 	newchange chan message.Change
 
-	blocktimer BlockTimer
+	blocktimer *BlockTimer
 
 	mp *MessagePasser
+}
+
+func NewHydrogen(l *Ledger, b *BlockTimer) *Hydrogen {
+    return &Hydrogen{l, nil, make(chan message.Vote),
+                        nil, make(chan message.Change), b, nil}
+}
+
+func (h *Hydrogen) RegisterBus(mp *MessagePasser) {
+    h.mp = mp
 }
 
 func (h *Hydrogen) Handle(m message.Message) {
