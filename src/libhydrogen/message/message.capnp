@@ -78,7 +78,8 @@ struct Change {
 struct Vote {
     votes @0: List(Change);
     time @1: Time;
-    authorization @2: Authorization;
+    account @2: Text;
+    authorization @3: Authorization;
 }
 
 struct Message {

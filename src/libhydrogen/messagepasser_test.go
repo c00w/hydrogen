@@ -15,7 +15,7 @@ type nullhandler struct {
 	*Ledger
 }
 
-func (n nullhandler) Handle(m message.Message) {}
+func (n nullhandler) Handle(m message.Message)      {}
 func (n nullhandler) RegisterBus(mp *MessagePasser) {}
 
 type channelhandler struct {
@@ -23,7 +23,7 @@ type channelhandler struct {
 	c chan message.Message
 }
 
-func (c channelhandler) Handle(m message.Message) { c.c <- m }
+func (c channelhandler) Handle(m message.Message)      { c.c <- m }
 func (n channelhandler) RegisterBus(mp *MessagePasser) {}
 
 func TestMessageManipulation(t *testing.T) {

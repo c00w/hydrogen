@@ -46,11 +46,14 @@ func (t Time) SetTime(o time.Time) {
 	t.SetNanoSeconds(uint32(o.Nanosecond()))
 }
 
-func (v Vote) Hash(h hash.Hash) {
-	for _, c := range v.Votes().ToArray() {
-		c.Hash(h)
+func (c Change_List) Hash(h hash.Hash) {
+	for i := 0; i < c.Len(); i++ {
+		c.At(i).Hash(h)
 	}
+}
 
+func (v Vote) Hash(h hash.Hash) {
+	v.Votes().Hash(h)
 	v.Time().Hash(h)
 	v.Authorization().Hash(h)
 }

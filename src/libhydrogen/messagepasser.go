@@ -1,7 +1,6 @@
 package libhydrogen
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/sha512"
 	"hash"
@@ -16,7 +15,7 @@ import (
 type Handler interface {
 	message.Verifier
 	Handle(m message.Message)
-    RegisterBus(mp *MessagePasser)
+	RegisterBus(mp *MessagePasser)
 }
 
 type MessagePasser struct {
@@ -40,7 +39,7 @@ func NewMessagePasser(n *libnode.Node, key *ecdsa.PrivateKey,
 	go mp.handleConns()
 	go mp.handleMessages()
 	n.AddListener("hydrogen", mp.newNeighbor)
-    h.RegisterBus(mp)
+	h.RegisterBus(mp)
 
 	return mp
 
@@ -53,12 +52,11 @@ func (mp *MessagePasser) handleConns() {
 }
 
 func (mp *MessagePasser) handleConn(c *libnode.NeighborNode) {
-	buf := new(bytes.Buffer)
 	var seg *capnp.Segment
 	var err error
 
 	for {
-		seg, err = capnp.ReadFromStream(c, buf)
+		seg, err = capnp.ReadFromStream(c, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -98,15 +96,6 @@ func (mp *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segmen
 	return n
 }
 
-func (mp *MessagePasser) SendChange(c message.Change) {
-
-	n := mp.CreateMessageFromChange(c)
-
-	for _, name := range mp.node.ListNeighbors() {
-		n.WriteTo(mp.node.GetNeighbor(name))
-	}
-}
-
 func (mp *MessagePasser) CreateMessageFromVote(v message.Vote) *capnp.Segment {
 	n := capnp.NewBuffer(nil)
 
@@ -125,13 +114,21 @@ func (mp *MessagePasser) CreateMessageFromVote(v message.Vote) *capnp.Segment {
 	return n
 }
 
+func (mp *MessagePasser) SendChange(c message.Change) {
+	n := mp.CreateMessageFromChange(c)
+    mp.sendMessage(n)
+}
+
 func (mp *MessagePasser) SendVote(v message.Vote) {
-
 	n := mp.CreateMessageFromVote(v)
+    mp.sendMessage(n)
+}
 
+func (mp *MessagePasser) sendMessage(n *capnp.Segment) {
 	for _, name := range mp.node.ListNeighbors() {
 		n.WriteTo(mp.node.GetNeighbor(name))
 	}
+    mp.newMessage <- message.ReadRootMessage(n)
 }
 
 func (mp *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {

@@ -46,108 +46,106 @@ func (l *Ledger) AddEntry(account string, key string, location string) {
 
 func (l *Ledger) Apply(c message.Change) error {
 
-    s := sha512.New()
-    c.Created().Hash(s)
+	s := sha512.New()
+	c.Created().Hash(s)
 
-    switch c.Type().Which() {
-        case message.CHANGETYPE_TRANSACTION:
-            t := c.Type().Transaction()
-            t.Hash(s)
+	switch c.Type().Which() {
+	case message.CHANGETYPE_TRANSACTION:
+		t := c.Type().Transaction()
+		t.Hash(s)
 
-            err := l.Verify(c.Authorization(), s.Sum(nil))
-            if err != nil {
-                return err
-            }
+		err := l.Verify(c.Authorization(), s.Sum(nil))
+		if err != nil {
+			return err
+		}
 
-            source, ok := l.Accounts[string(t.Source())]
-            if !ok {
-                return errors.New("no such source account")
-            }
+		source, ok := l.Accounts[string(t.Source())]
+		if !ok {
+			return errors.New("no such source account")
+		}
 
-            destination, ok := l.Accounts[string(t.Destination())]
-            if !ok {
-                return errors.New("no such destination account")
-            }
+		destination, ok := l.Accounts[string(t.Destination())]
+		if !ok {
+			return errors.New("no such destination account")
+		}
 
-            if source.Balance < t.Amount() {
-                return errors.New("insufficient funds")
-            }
+		if source.Balance < t.Amount() {
+			return errors.New("insufficient funds")
+		}
 
-            source.Balance -= t.Amount()
-            destination.Balance += t.Amount()
+		source.Balance -= t.Amount()
+		destination.Balance += t.Amount()
 
-            l.Accounts[source.ID] = source
-            l.Accounts[destination.ID] = destination
+		l.Accounts[source.ID] = source
+		l.Accounts[destination.ID] = destination
 
-        case message.CHANGETYPE_LOCATION:
-            lo := c.Type().Location()
-            lo.Hash(s)
+	case message.CHANGETYPE_LOCATION:
+		lo := c.Type().Location()
+		lo.Hash(s)
 
-            err := l.Verify(c.Authorization(), s.Sum(nil))
-            if err != nil {
-                return err
-            }
+		err := l.Verify(c.Authorization(), s.Sum(nil))
+		if err != nil {
+			return err
+		}
 
-            account, ok := l.Accounts[string(lo.Account())]
-            if !ok {
-                return errors.New("no such account")
-            }
+		account, ok := l.Accounts[string(lo.Account())]
+		if !ok {
+			return errors.New("no such account")
+		}
 
-            account.Location = lo.Location()
-            l.Accounts[account.ID] = account
+		account.Location = lo.Location()
+		l.Accounts[account.ID] = account
 
-        case message.CHANGETYPE_KEY:
-            k := c.Type().Key()
-            k.Hash(s)
+	case message.CHANGETYPE_KEY:
+		k := c.Type().Key()
+		k.Hash(s)
 
-            err := l.Verify(c.Authorization(), s.Sum(nil))
-            if err != nil {
-                return err
-            }
+		err := l.Verify(c.Authorization(), s.Sum(nil))
+		if err != nil {
+			return err
+		}
 
-            account, ok := l.Accounts[string(k.Account())]
-            if !ok {
-                return errors.New("no such account")
-            }
+		account, ok := l.Accounts[string(k.Account())]
+		if !ok {
+			return errors.New("no such account")
+		}
 
-            account.Key = string(k.Newkeys().At(0))
-            l.Accounts[account.ID] = account
+		account.Key = string(k.Newkeys().At(0))
+		l.Accounts[account.ID] = account
 
+	case message.CHANGETYPE_DROP:
+		d := c.Type().Key()
+		account := string(d.Account())
+		info, ok := l.Accounts[account]
+		if !ok {
+			return errors.New("no such account")
+		}
+		info.Location = ""
+		l.Accounts[account] = info
 
-        case message.CHANGETYPE_DROP:
-            d := c.Type().Key()
-            account := string(d.Account())
-            info, ok := l.Accounts[account]
-            if !ok {
-                return errors.New("no such account")
-            }
-            info.Location = ""
-            l.Accounts[account] = info
+	case message.CHANGETYPE_TIME:
 
-        case message.CHANGETYPE_TIME:
-
-
-        default:
-            return errors.New("unrecognized change type")
-    }
+	default:
+		return errors.New("unrecognized change type")
+	}
 
 	return nil
 }
 
 func (l *Ledger) HostCount() uint {
-    i := uint(0)
-    for _, a := range(l.Accounts) {
-        if a.Location != "" {
-            i += 1
-        }
-    }
+	i := uint(0)
+	for _, a := range l.Accounts {
+		if a.Location != "" {
+			i += 1
+		}
+	}
 	return i
 }
 
 func (l *Ledger) Copy() *Ledger {
-    nl := &Ledger{make(map[string]*Account)}
-    for k,v := range(l.Accounts) {
-        nl.Accounts[k] = v
-    }
+	nl := &Ledger{make(map[string]*Account)}
+	for k, v := range l.Accounts {
+		nl.Accounts[k] = v
+	}
 	return nl
 }
