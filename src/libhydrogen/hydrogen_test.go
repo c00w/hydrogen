@@ -55,12 +55,6 @@ func TestHydrogen(t *testing.T) {
 		t.Errorf("Not enough votes %d", len(v2))
 	}
 
-	<-tc1
-	<-tc2
-
-	<-tc1
-	<-tc2
-
 	if h1.GetBalance("node2") != 110 {
 		t.Logf("node1 balance is %d", h1.GetBalance("node1"))
 		t.Errorf("node2 balance is %d != 110", h1.GetBalance("node2"))
