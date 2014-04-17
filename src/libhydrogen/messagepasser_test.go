@@ -34,8 +34,8 @@ func TestMessageManipulation(t *testing.T) {
 	n2 := libnode.NewNode("node2", key2, "location2")
 
 	l := NewLedger()
-	l.AddEntry("node1", util.KeyString(key1), "location1")
-	l.AddEntry("node2", util.KeyString(key2), "location2")
+	l.AddEntry("node1", util.KeyString(key1), "location1", 100)
+	l.AddEntry("node2", util.KeyString(key2), "location2", 100)
 
 	h1 := NewMessagePasser(n1, key1, nullhandler{l})
 	h2 := NewMessagePasser(n2, key2, nullhandler{l})
@@ -86,9 +86,9 @@ func TestMessagePassing(t *testing.T) {
 	n3 := libnode.NewNode("node3", key3, "location3")
 
 	l := NewLedger()
-	l.AddEntry("node1", util.KeyString(key1), "location1")
-	l.AddEntry("node2", util.KeyString(key2), "location2")
-	l.AddEntry("node3", util.KeyString(key3), "location3")
+	l.AddEntry("node1", util.KeyString(key1), "location1", 100)
+	l.AddEntry("node2", util.KeyString(key2), "location2", 100)
+	l.AddEntry("node3", util.KeyString(key3), "location3", 100)
 
 	tc := make(chan message.Message)
 

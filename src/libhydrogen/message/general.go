@@ -1,8 +1,12 @@
 package message
 
 import (
+	"crypto/ecdsa"
+	"crypto/sha512"
 	"hash"
 	"time"
+
+	capnp "github.com/glycerine/go-capnproto"
 )
 
 type Verifier interface {
@@ -29,6 +33,12 @@ func (m MessagePayload) Hash(h hash.Hash) {
 		m.Change().Hash(h)
 	default:
 	}
+}
+
+func NewTimeNow(n *capnp.Segment) Time {
+	t := NewTime(n)
+	t.SetTime(time.Now())
+	return t
 }
 
 func (t Time) Hash(h hash.Hash) {
@@ -74,6 +84,28 @@ func (c Change) Hash(h hash.Hash) {
 		c.Type().Time().Hash(h)
 	default:
 	}
+}
+
+func NewSignedTransaction(source string, key *ecdsa.PrivateKey, destination string, amount uint64) Change {
+	n := capnp.NewBuffer(nil)
+
+	c := NewRootChange(n)
+	c.SetCreated(NewTimeNow(n))
+
+	t := NewTransactionChange(n)
+	t.SetSource([]byte(source))
+	t.SetDestination([]byte(destination))
+	t.SetAmount(amount)
+
+	c.Type().SetTransaction(t)
+
+	s := sha512.New()
+	c.Created().Hash(s)
+	t.Hash(s)
+
+	auth := NewSignedAuthorization(n, source, key, s.Sum(nil))
+	c.SetAuthorization(auth)
+	return c
 }
 
 func (t TransactionChange) Hash(h hash.Hash) {

@@ -116,19 +116,19 @@ func (mp *MessagePasser) CreateMessageFromVote(v message.Vote) *capnp.Segment {
 
 func (mp *MessagePasser) SendChange(c message.Change) {
 	n := mp.CreateMessageFromChange(c)
-    mp.sendMessage(n)
+	mp.sendMessage(n)
 }
 
 func (mp *MessagePasser) SendVote(v message.Vote) {
 	n := mp.CreateMessageFromVote(v)
-    mp.sendMessage(n)
+	mp.sendMessage(n)
 }
 
 func (mp *MessagePasser) sendMessage(n *capnp.Segment) {
 	for _, name := range mp.node.ListNeighbors() {
 		n.WriteTo(mp.node.GetNeighbor(name))
 	}
-    mp.newMessage <- message.ReadRootMessage(n)
+	mp.newMessage <- message.ReadRootMessage(n)
 }
 
 func (mp *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {

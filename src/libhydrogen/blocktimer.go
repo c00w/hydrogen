@@ -5,8 +5,13 @@ import (
 	"time"
 )
 
+type TimeRange struct {
+	Start time.Time
+	End   time.Time
+}
+
 func NewBlockTimer(tau time.Duration, lasttime time.Time) *BlockTimer {
-	b := &BlockTimer{tau, lasttime, nil, make(chan struct{}), &sync.RWMutex{}}
+	b := &BlockTimer{tau, lasttime, nil, make(chan TimeRange), &sync.RWMutex{}}
 	b.setupTimer()
 	return b
 }
@@ -15,11 +20,11 @@ type BlockTimer struct {
 	tau          time.Duration
 	lasttime     time.Time
 	currenttimer *time.Timer
-	firingchan   chan struct{}
+	firingchan   chan TimeRange
 	lock         *sync.RWMutex
 }
 
-func (b *BlockTimer) Chan() chan struct{} {
+func (b *BlockTimer) Chan() chan TimeRange {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	return b.firingchan
@@ -48,8 +53,8 @@ func (b *BlockTimer) setupTimer() {
 
 func (b *BlockTimer) timerFired() {
 	b.lock.Lock()
+	b.firingchan <- TimeRange{b.lasttime, b.lasttime.Add(b.tau)}
 	b.lasttime = b.lasttime.Add(b.tau)
-	b.firingchan <- struct{}{}
 	b.setupTimer()
 	b.lock.Unlock()
 }

@@ -4,7 +4,7 @@ import (
 	"crypto/sha512"
 	"log"
 	"sort"
-    "sync"
+	"sync"
 	"time"
 
 	"libhydrogen/message"
@@ -25,29 +25,29 @@ type Hydrogen struct {
 
 	mp *MessagePasser
 
-    newblock chan []message.Vote
+	newblock chan []message.Vote
 
-    lock *sync.RWMutex
+	lock *sync.RWMutex
 }
 
 func NewHydrogen(l *Ledger, b *BlockTimer) *Hydrogen {
-    return newHydrogen(l, b, nil)
+	return newHydrogen(l, b, nil)
 }
 
 func newHydrogen(l *Ledger, b *BlockTimer, c chan []message.Vote) *Hydrogen {
-    return &Hydrogen{l, nil, make(chan message.Vote),
-                        nil, make(chan message.Change), b, nil, c, &sync.RWMutex{}}
+	return &Hydrogen{l, nil, make(chan message.Vote),
+		nil, make(chan message.Change), b, nil, c, &sync.RWMutex{}}
 }
 
 func (h *Hydrogen) RegisterBus(mp *MessagePasser) {
-    h.mp = mp
-    go h.eventloop()
+	h.mp = mp
+	go h.eventloop()
 }
 
 func (h *Hydrogen) Verify(ks message.Authorization, hash []byte) error {
-    h.lock.RLock()
-    defer h.lock.RUnlock()
-    return h.currentledger.Verify(ks, hash)
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+	return h.currentledger.Verify(ks, hash)
 }
 
 func (h *Hydrogen) Handle(m message.Message) {
@@ -61,43 +61,68 @@ func (h *Hydrogen) Handle(m message.Message) {
 	}
 }
 
+func (h *Hydrogen) TransferMoney(destination string, amount uint64) error {
+	t := message.NewSignedTransaction(h.mp.node.Account, h.mp.node.Key, destination, amount)
+	h.mp.SendChange(t)
+	return nil
+}
+
+func (h *Hydrogen) GetBalance(account string) uint64 {
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+	return h.currentledger.Accounts[account].Balance
+}
+
 func (h *Hydrogen) handleVote(v message.Vote) {
-    h.lock.Lock()
-    h.votes = append(h.votes, v)
-    h.lock.Unlock()
+	h.lock.Lock()
+	h.votes = append(h.votes, v)
+	h.lock.Unlock()
 }
 
 func (h *Hydrogen) handleChange(c message.Change) {
-    h.lock.Lock()
-    h.changes = append(h.changes, c)
-    h.lock.Unlock()
+	h.lock.Lock()
+	h.changes = append(h.changes, c)
+	h.lock.Unlock()
 }
 
 func (h *Hydrogen) eventloop() {
 	for {
-		<-h.blocktimer.Chan()
-        h.lock.Lock()
-        oldvotes := h.votes
-        newledger, appliedchanges, _ := h.tallyVotes()
-        h.currentledger = newledger
-        h.changes = h.filterChanges(appliedchanges)
-        h.changes = h.validateChanges()
-        vote := h.createVote()
-        h.mp.SendVote(vote)
-        if h.newblock != nil {
-            h.newblock <- oldvotes
-        }
-        h.lock.Unlock()
+		bt := <-h.blocktimer.Chan()
+		h.lock.Lock()
+
+		oldvotes := h.votes
+
+		appliedchanges, _ := h.applyVotes(bt)
+
+		h.cleanupChanges(appliedchanges)
+		h.cleanupVotes(bt)
+
+		vote := h.createVote()
+
+		h.mp.SendVote(vote)
+
+		if h.newblock != nil {
+			h.newblock <- oldvotes
+		}
+		h.lock.Unlock()
 	}
 }
 
-func (h *Hydrogen) tallyVotes() (*Ledger, []message.Change, time.Duration) {
+func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, time.Duration) {
+
 	changes := make(map[string]message.Change)
 	changecount := make(map[string]uint)
 
 	s := sha512.New()
 
+	currentvotes := make([]message.Vote, 0)
 	for _, v := range h.votes {
+		if v.Time().Time().After(t.Start) && v.Time().Time().Before(t.End) {
+			currentvotes = append(currentvotes, v)
+		}
+	}
+
+	for _, v := range currentvotes {
 		for _, c := range v.Votes().ToArray() {
 			s.Reset()
 			c.Hash(s)
@@ -112,7 +137,7 @@ func (h *Hydrogen) tallyVotes() (*Ledger, []message.Change, time.Duration) {
 	appliedchanges := make([]message.Change, 0)
 
 	for id, count := range changecount {
-		if count > h.currentledger.HostCount() {
+		if count > h.currentledger.HostCount()/2 {
 			appliedchanges = append(appliedchanges, changes[id])
 		}
 	}
@@ -127,10 +152,12 @@ func (h *Hydrogen) tallyVotes() (*Ledger, []message.Change, time.Duration) {
 		}
 	}
 
-	return ledger, appliedchanges, 0
+	h.currentledger = ledger
+
+	return appliedchanges, 0
 }
 
-func (h *Hydrogen) filterChanges(applied []message.Change) []message.Change {
+func (h *Hydrogen) cleanupChanges(applied []message.Change) {
 	seen := make(map[string]bool)
 
 	s := sha512.New()
@@ -153,10 +180,8 @@ func (h *Hydrogen) filterChanges(applied []message.Change) []message.Change {
 		}
 	}
 
-	return notseen
-}
+	h.changes = notseen
 
-func (h *Hydrogen) validateChanges() []message.Change {
 	sort.Sort(timesort(h.changes))
 
 	changes := make([]message.Change, 0)
@@ -169,7 +194,19 @@ func (h *Hydrogen) validateChanges() []message.Change {
 		}
 	}
 
-	return changes
+	h.changes = changes
+}
+
+func (h *Hydrogen) cleanupVotes(t TimeRange) {
+	votes := make([]message.Vote, 0)
+
+	for _, v := range h.votes {
+		if v.Time().Time().After(t.End) {
+			votes = append(votes, v)
+		}
+	}
+
+	h.votes = votes
 }
 
 func (h *Hydrogen) createVote() message.Vote {
@@ -182,18 +219,18 @@ func (h *Hydrogen) createVote() message.Vote {
 	}
 	v.SetVotes(cl)
 
-    t := message.NewTime(ns)
-    t.SetTime(time.Now())
+	t := message.NewTime(ns)
+	t.SetTime(time.Now())
 	v.SetTime(t)
 
-    v.SetAccount(h.mp.node.Account)
+	v.SetAccount(h.mp.node.Account)
 
-    s := sha512.New()
-    cl.Hash(s)
-    t.Hash(s)
-    s.Write([]byte(h.mp.node.Account))
+	s := sha512.New()
+	cl.Hash(s)
+	t.Hash(s)
+	s.Write([]byte(h.mp.node.Account))
 
-    a := message.NewSignedAuthorization(ns, h.mp.node.Account, h.mp.node.Key, s.Sum(nil))
+	a := message.NewSignedAuthorization(ns, h.mp.node.Account, h.mp.node.Key, s.Sum(nil))
 	v.SetAuthorization(a)
 	return v
 }

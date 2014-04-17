@@ -40,8 +40,8 @@ func (l *Ledger) Verify(auth message.Authorization, hash []byte) error {
 	return nil
 }
 
-func (l *Ledger) AddEntry(account string, key string, location string) {
-	l.Accounts[account] = &Account{account, key, location, 0}
+func (l *Ledger) AddEntry(account string, key string, location string, balance uint64) {
+	l.Accounts[account] = &Account{account, key, location, balance}
 }
 
 func (l *Ledger) Apply(c message.Change) error {
@@ -63,11 +63,14 @@ func (l *Ledger) Apply(c message.Change) error {
 		if !ok {
 			return errors.New("no such source account")
 		}
+		source = source.Copy()
 
 		destination, ok := l.Accounts[string(t.Destination())]
 		if !ok {
-			return errors.New("no such destination account")
+			l.AddEntry(string(t.Destination()), "", "", 0)
+			destination = l.Accounts[string(t.Destination())]
 		}
+		destination = destination.Copy()
 
 		if source.Balance < t.Amount() {
 			return errors.New("insufficient funds")
