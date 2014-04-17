@@ -2,7 +2,7 @@ package libhydrogen
 
 import (
 	"crypto/sha512"
-    "errors"
+	"errors"
 	"log"
 	"sort"
 	"sync"
@@ -70,12 +70,12 @@ func (h *Hydrogen) TransferMoney(destination string, amount uint64) error {
 
 func (h *Hydrogen) GetBalance(account string) (uint64, error) {
 	h.lock.RLock()
-    entry, ok := h.currentledger.Accounts[account]
-    h.lock.RUnlock()
-    if !ok {
-        return 0, errors.New("no such account")
-    }
-    return entry.Balance, nil
+	entry, ok := h.currentledger.Accounts[account]
+	h.lock.RUnlock()
+	if !ok {
+		return 0, errors.New("no such account")
+	}
+	return entry.Balance, nil
 }
 
 func (h *Hydrogen) handleVote(v message.Vote) {

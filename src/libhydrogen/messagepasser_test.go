@@ -107,6 +107,7 @@ func TestMessagePassing(t *testing.T) {
 	h1.SendChange(c)
 	m := <-tc
 	if m.AuthChain().Len() != 2 {
-		t.Fatal("message was not setup correctly")
+		t.Errorf("Authchain incorrect length, %d != 2", m.AuthChain().Len())
+        t.Errorf("Message was %v", m)
 	}
 }
