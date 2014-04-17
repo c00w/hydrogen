@@ -6,8 +6,7 @@ $Go.import("message");
 @0xf5151606f45c93ef;
 
 struct Authorization {
-    account @0: Text;
-    signatures @1: List(KeySignature);
+    signatures @0: List(KeySignature);
 }
 
 struct Key {
@@ -41,11 +40,6 @@ struct LocationChange {
     location @1: Text;
 }
 
-struct KeyChange {
-    account @0: Data;
-    newkeys @1: List(Data);
-}
-
 struct DropChange {
     account @0: Data;
 }
@@ -68,9 +62,8 @@ struct Change {
     type :union {
          transaction @2 :TransactionChange;
          location @3 :LocationChange;
-         key @4: KeyChange;
-         drop @5: DropChange;
-         time @6: RateChange;
+         drop @4: DropChange;
+         time @5: RateChange;
 
     }
 }
@@ -78,8 +71,7 @@ struct Change {
 struct Vote {
     votes @0: List(Change);
     time @1: Time;
-    account @2: Text;
-    authorization @3: Authorization;
+    authorization @2: Authorization;
 }
 
 struct Message {
@@ -89,4 +81,3 @@ struct Message {
     }
     authChain @2: List(Authorization);
 }
-

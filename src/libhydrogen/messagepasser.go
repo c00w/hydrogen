@@ -87,7 +87,7 @@ func (mp *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segmen
 	run := sha512.New()
 	c.Hash(run)
 
-	a := message.NewSignedAuthorization(n, mp.node.Account, mp.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.key, run.Sum(nil))
 
 	al := message.NewAuthorizationList(n, 1)
 	capnp.PointerList(al).Set(0, capnp.Object(a))
@@ -105,7 +105,7 @@ func (mp *MessagePasser) CreateMessageFromVote(v message.Vote) *capnp.Segment {
 	run := sha512.New()
 	v.Hash(run)
 
-	a := message.NewSignedAuthorization(n, mp.node.Account, mp.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.key, run.Sum(nil))
 
 	al := message.NewAuthorizationList(n, 1)
 	capnp.PointerList(al).Set(0, capnp.Object(a))
@@ -142,7 +142,7 @@ func (mp *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*c
 		capnp.PointerList(l).Set(i, capnp.Object(v))
 	}
 
-	a := message.NewSignedAuthorization(n, mp.node.Account, mp.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.key, run.Sum(nil))
 
 	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
 

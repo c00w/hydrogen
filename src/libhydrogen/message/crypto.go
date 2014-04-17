@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha512"
 	"hash"
 	"math/big"
 
@@ -45,11 +46,18 @@ func (ks KeySignature) Hash(h hash.Hash) {
 }
 
 func (a Authorization) Hash(h hash.Hash) {
-	h.Write([]byte(a.Account()))
 	a.Signatures().At(0).Hash(h)
 }
 
-func NewSignedAuthorization(n *capnp.Segment, account string, key *ecdsa.PrivateKey, item []byte) Authorization {
+func (a Authorization) Account() string {
+	s := sha512.New()
+	for i := 0; i < a.Signatures().Len(); i++ {
+		a.Signatures().At(i).Key().Hash(s)
+	}
+	return string(s.Sum(nil))
+}
+
+func NewSignedAuthorization(n *capnp.Segment, key *ecdsa.PrivateKey, item []byte) Authorization {
 
 	k := NewKey(n)
 	k.SetX(key.X.Bytes())
@@ -72,7 +80,6 @@ func NewSignedAuthorization(n *capnp.Segment, account string, key *ecdsa.Private
 	capnp.PointerList(sl).Set(0, capnp.Object(keysig))
 
 	auth := NewAuthorization(n)
-	auth.SetAccount(account)
 	auth.SetSignatures(sl)
 
 	return auth

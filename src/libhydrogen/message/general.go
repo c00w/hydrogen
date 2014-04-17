@@ -6,6 +6,8 @@ import (
 	"hash"
 	"time"
 
+	"util"
+
 	capnp "github.com/glycerine/go-capnproto"
 )
 
@@ -76,8 +78,6 @@ func (c Change) Hash(h hash.Hash) {
 		c.Type().Transaction().Hash(h)
 	case CHANGETYPE_LOCATION:
 		c.Type().Location().Hash(h)
-	case CHANGETYPE_KEY:
-		c.Type().Key().Hash(h)
 	case CHANGETYPE_DROP:
 		c.Type().Drop().Hash(h)
 	case CHANGETYPE_TIME:
@@ -86,14 +86,14 @@ func (c Change) Hash(h hash.Hash) {
 	}
 }
 
-func NewSignedTransaction(source string, key *ecdsa.PrivateKey, destination string, amount uint64) Change {
+func NewSignedTransaction(key *ecdsa.PrivateKey, destination string, amount uint64) Change {
 	n := capnp.NewBuffer(nil)
 
 	c := NewRootChange(n)
 	c.SetCreated(NewTimeNow(n))
 
 	t := NewTransactionChange(n)
-	t.SetSource([]byte(source))
+	t.SetSource([]byte(util.KeyString(key)))
 	t.SetDestination([]byte(destination))
 	t.SetAmount(amount)
 
@@ -103,7 +103,7 @@ func NewSignedTransaction(source string, key *ecdsa.PrivateKey, destination stri
 	c.Created().Hash(s)
 	t.Hash(s)
 
-	auth := NewSignedAuthorization(n, source, key, s.Sum(nil))
+	auth := NewSignedAuthorization(n, key, s.Sum(nil))
 	c.SetAuthorization(auth)
 	return c
 }
@@ -117,11 +117,6 @@ func (t TransactionChange) Hash(h hash.Hash) {
 func (l LocationChange) Hash(h hash.Hash) {
 	h.Write(l.Account())
 	h.Write([]byte(l.Location()))
-}
-
-func (k KeyChange) Hash(h hash.Hash) {
-	h.Write(k.Account())
-	h.Write(k.Newkeys().At(0))
 }
 
 func (d DropChange) Hash(h hash.Hash) {

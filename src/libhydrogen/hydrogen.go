@@ -2,6 +2,7 @@ package libhydrogen
 
 import (
 	"crypto/sha512"
+    "errors"
 	"log"
 	"sort"
 	"sync"
@@ -62,15 +63,19 @@ func (h *Hydrogen) Handle(m message.Message) {
 }
 
 func (h *Hydrogen) TransferMoney(destination string, amount uint64) error {
-	t := message.NewSignedTransaction(h.mp.node.Account, h.mp.node.Key, destination, amount)
+	t := message.NewSignedTransaction(h.mp.node.Key, destination, amount)
 	h.mp.SendChange(t)
 	return nil
 }
 
-func (h *Hydrogen) GetBalance(account string) uint64 {
+func (h *Hydrogen) GetBalance(account string) (uint64, error) {
 	h.lock.RLock()
-	defer h.lock.RUnlock()
-	return h.currentledger.Accounts[account].Balance
+    entry, ok := h.currentledger.Accounts[account]
+    h.lock.RUnlock()
+    if !ok {
+        return 0, errors.New("no such account")
+    }
+    return entry.Balance, nil
 }
 
 func (h *Hydrogen) handleVote(v message.Vote) {
@@ -90,39 +95,37 @@ func (h *Hydrogen) eventloop() {
 		bt := <-h.blocktimer.Chan()
 		h.lock.Lock()
 
-		oldvotes := h.votes
-
-		appliedchanges, _ := h.applyVotes(bt)
+		appliedchanges, appliedvotes, _ := h.applyVotes(bt)
 
 		h.cleanupChanges(appliedchanges)
 		h.cleanupVotes(bt)
 
 		vote := h.createVote()
+		h.lock.Unlock()
 
 		h.mp.SendVote(vote)
 
 		if h.newblock != nil {
-			h.newblock <- oldvotes
+			h.newblock <- appliedvotes
 		}
-		h.lock.Unlock()
 	}
 }
 
-func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, time.Duration) {
+func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote, time.Duration) {
 
 	changes := make(map[string]message.Change)
 	changecount := make(map[string]uint)
 
 	s := sha512.New()
 
-	currentvotes := make([]message.Vote, 0)
+	appliedvotes := make([]message.Vote, 0)
 	for _, v := range h.votes {
 		if v.Time().Time().After(t.Start) && v.Time().Time().Before(t.End) {
-			currentvotes = append(currentvotes, v)
+			appliedvotes = append(appliedvotes, v)
 		}
 	}
 
-	for _, v := range currentvotes {
+	for _, v := range appliedvotes {
 		for _, c := range v.Votes().ToArray() {
 			s.Reset()
 			c.Hash(s)
@@ -154,7 +157,7 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, time.Duration) {
 
 	h.currentledger = ledger
 
-	return appliedchanges, 0
+	return appliedchanges, appliedvotes, 0
 }
 
 func (h *Hydrogen) cleanupChanges(applied []message.Change) {
@@ -223,14 +226,12 @@ func (h *Hydrogen) createVote() message.Vote {
 	t.SetTime(time.Now())
 	v.SetTime(t)
 
-	v.SetAccount(h.mp.node.Account)
-
 	s := sha512.New()
 	cl.Hash(s)
 	t.Hash(s)
 	s.Write([]byte(h.mp.node.Account))
 
-	a := message.NewSignedAuthorization(ns, h.mp.node.Account, h.mp.node.Key, s.Sum(nil))
+	a := message.NewSignedAuthorization(ns, h.mp.node.Key, s.Sum(nil))
 	v.SetAuthorization(a)
 	return v
 }

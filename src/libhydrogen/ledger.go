@@ -40,8 +40,8 @@ func (l *Ledger) Verify(auth message.Authorization, hash []byte) error {
 	return nil
 }
 
-func (l *Ledger) AddEntry(account string, key string, location string, balance uint64) {
-	l.Accounts[account] = &Account{account, key, location, balance}
+func (l *Ledger) AddEntry(key string, location string, balance uint64) {
+	l.Accounts[key] = &Account{key, location, balance}
 }
 
 func (l *Ledger) Apply(c message.Change) error {
@@ -67,7 +67,7 @@ func (l *Ledger) Apply(c message.Change) error {
 
 		destination, ok := l.Accounts[string(t.Destination())]
 		if !ok {
-			l.AddEntry(string(t.Destination()), "", "", 0)
+			l.AddEntry(string(t.Destination()), "", 0)
 			destination = l.Accounts[string(t.Destination())]
 		}
 		destination = destination.Copy()
@@ -79,8 +79,8 @@ func (l *Ledger) Apply(c message.Change) error {
 		source.Balance -= t.Amount()
 		destination.Balance += t.Amount()
 
-		l.Accounts[source.ID] = source
-		l.Accounts[destination.ID] = destination
+		l.Accounts[source.Key] = source
+		l.Accounts[destination.Key] = destination
 
 	case message.CHANGETYPE_LOCATION:
 		lo := c.Type().Location()
@@ -97,27 +97,10 @@ func (l *Ledger) Apply(c message.Change) error {
 		}
 
 		account.Location = lo.Location()
-		l.Accounts[account.ID] = account
-
-	case message.CHANGETYPE_KEY:
-		k := c.Type().Key()
-		k.Hash(s)
-
-		err := l.Verify(c.Authorization(), s.Sum(nil))
-		if err != nil {
-			return err
-		}
-
-		account, ok := l.Accounts[string(k.Account())]
-		if !ok {
-			return errors.New("no such account")
-		}
-
-		account.Key = string(k.Newkeys().At(0))
-		l.Accounts[account.ID] = account
+		l.Accounts[account.Key] = account
 
 	case message.CHANGETYPE_DROP:
-		d := c.Type().Key()
+		d := c.Type().Drop()
 		account := string(d.Account())
 		info, ok := l.Accounts[account]
 		if !ok {

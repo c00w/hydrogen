@@ -17,8 +17,8 @@ func TestHydrogen(t *testing.T) {
 	n2 := libnode.NewNode("node2", key2, "location2")
 
 	l := NewLedger()
-	l.AddEntry("node1", util.KeyString(key1), "location1", 100)
-	l.AddEntry("node2", util.KeyString(key2), "location2", 100)
+	l.AddEntry(util.KeyString(key1), "location1", 100)
+	l.AddEntry(util.KeyString(key2), "location2", 100)
 
 	n1.Listen("localhost:4005")
 	n2.Connect("localhost:4005")
@@ -37,7 +37,9 @@ func TestHydrogen(t *testing.T) {
 	NewMessagePasser(n1, key1, h1)
 	NewMessagePasser(n2, key2, h2)
 
-	h1.TransferMoney("node2", 10)
+    node2 := util.KeyString(key2)
+
+	h1.TransferMoney(node2, 10)
 
 	<-tc1
 	<-tc2
@@ -46,23 +48,33 @@ func TestHydrogen(t *testing.T) {
 	v2 := <-tc2
 
 	if len(v1) != 2 {
-		t.Log(v1[0].Authorization().Account())
+        for _, v := range(v1) {
+            t.Log(v)
+        }
 		t.Errorf("Not enough votes %d", len(v1))
 	}
 
 	if len(v2) != 2 {
-		t.Log(v1[0].Authorization().Account())
+       for _, v := range(v2) {
+            t.Log(v)
+        }
 		t.Errorf("Not enough votes %d", len(v2))
 	}
 
-	if h1.GetBalance("node2") != 110 {
-		t.Logf("node1 balance is %d", h1.GetBalance("node1"))
-		t.Errorf("node2 balance is %d != 110", h1.GetBalance("node2"))
+    if b, err := h1.GetBalance(node2); b != 110 {
+        if err != nil {
+            t.Errorf("error fetching balance", err)
+        }
+		t.Logf("node1 balance is %d", b)
+		t.Errorf("node2 balance is %d != 110", b)
 	}
 
-	if h2.GetBalance("node2") != 110 {
-		t.Logf("node1 balance is %d", h2.GetBalance("node1"))
-		t.Errorf("node2 balance is %d != 110", h2.GetBalance("node2"))
+    if b, err := h2.GetBalance(node2); b != 110 {
+        if err != nil {
+            t.Errorf("error fetching balance", err)
+        }
+		t.Logf("node1 balance is %d", b)
+		t.Errorf("node2 balance is %d != 110", b)
 	}
 
 }
