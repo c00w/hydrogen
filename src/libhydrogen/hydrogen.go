@@ -95,7 +95,9 @@ func (h *Hydrogen) eventloop() {
 		bt := <-h.blocktimer.Chan()
 		h.lock.Lock()
 
-		appliedchanges, appliedvotes, _ := h.applyVotes(bt)
+		appliedchanges, appliedvotes := h.applyVotes(bt)
+
+		h.blocktimer.SetTau(h.currentledger.Tau)
 
 		h.cleanupChanges(appliedchanges)
 		h.cleanupVotes(bt)
@@ -111,7 +113,7 @@ func (h *Hydrogen) eventloop() {
 	}
 }
 
-func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote, time.Duration) {
+func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 
 	changes := make(map[string]message.Change)
 	changecount := make(map[string]uint)
@@ -145,7 +147,7 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote, ti
 		}
 	}
 
-	ledger := h.currentledger.Copy()
+	ledger := h.currentledger.Copy(t.End)
 
 	sort.Sort(timesort(appliedchanges))
 	for _, change := range appliedchanges {
@@ -157,7 +159,7 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote, ti
 
 	h.currentledger = ledger
 
-	return appliedchanges, appliedvotes, 0
+	return appliedchanges, appliedvotes
 }
 
 func (h *Hydrogen) cleanupChanges(applied []message.Change) {
@@ -188,7 +190,7 @@ func (h *Hydrogen) cleanupChanges(applied []message.Change) {
 	sort.Sort(timesort(h.changes))
 
 	changes := make([]message.Change, 0)
-	changeledger := h.currentledger.Copy()
+	changeledger := h.currentledger.Copy(time.Now())
 
 	for _, change := range h.changes {
 		err := changeledger.Apply(change)

@@ -30,20 +30,15 @@ func (b *BlockTimer) Chan() chan TimeRange {
 	return b.firingchan
 }
 
-func (b *BlockTimer) IncreaseTau() {
+func (b *BlockTimer) SetTau(tau time.Duration) {
 	b.lock.Lock()
-	b.tau = time.Duration(b.tau.Nanoseconds() * 11 / 10)
+	defer b.lock.Unlock()
+	if tau == b.tau {
+		return
+	}
+	b.tau = tau
 	b.currenttimer.Stop()
 	b.setupTimer()
-	b.lock.Unlock()
-}
-
-func (b *BlockTimer) DecreaseTau() {
-	b.lock.Lock()
-	b.tau = time.Duration(b.tau.Nanoseconds() * 10 / 11)
-	b.currenttimer.Stop()
-	b.setupTimer()
-	b.lock.Unlock()
 }
 
 func (b *BlockTimer) setupTimer() {

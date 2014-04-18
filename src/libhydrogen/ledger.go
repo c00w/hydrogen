@@ -5,16 +5,19 @@ import (
 	"crypto/sha512"
 	"errors"
 	"fmt"
+	"time"
 
 	"libhydrogen/message"
 )
 
 type Ledger struct {
 	Accounts map[string]*Account
+	Tau      time.Duration
+	Created  time.Time
 }
 
 func NewLedger() *Ledger {
-	return &Ledger{make(map[string]*Account)}
+	return &Ledger{make(map[string]*Account), time.Second, time.Now()}
 }
 
 func (l *Ledger) Verify(auth message.Authorization, hash []byte) error {
@@ -110,6 +113,13 @@ func (l *Ledger) Apply(c message.Change) error {
 		l.Accounts[account] = info
 
 	case message.CHANGETYPE_TIME:
+		switch c.Type().Time().Vote() {
+		case message.RATEVOTE_INCREASE:
+			l.Tau = l.Tau * 11 / 10
+		case message.RATEVOTE_DECREASE:
+			l.Tau = l.Tau * 10 / 11
+		default:
+		}
 
 	default:
 		return errors.New("unrecognized change type")
@@ -128,8 +138,8 @@ func (l *Ledger) HostCount() uint {
 	return i
 }
 
-func (l *Ledger) Copy() *Ledger {
-	nl := &Ledger{make(map[string]*Account)}
+func (l *Ledger) Copy(t time.Time) *Ledger {
+	nl := &Ledger{make(map[string]*Account), l.Tau, t}
 	for k, v := range l.Accounts {
 		nl.Accounts[k] = v
 	}
