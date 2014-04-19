@@ -110,4 +110,13 @@ func TestMessagePassing(t *testing.T) {
 		t.Errorf("Authchain incorrect length, %d != 2", m.AuthChain().Len())
 		t.Errorf("Message was %v", m)
 	}
+
+	n = capnp.NewBuffer(nil)
+	v := message.NewVote(n)
+	h1.SendVote(v)
+	m = <-tc
+	if m.AuthChain().Len() != 2 {
+		t.Errorf("Authchain incorrect length, %d != 2", m.AuthChain().Len())
+		t.Errorf("Message was %v", m)
+	}
 }
