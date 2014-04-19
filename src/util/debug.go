@@ -2,11 +2,12 @@ package util
 
 import (
 	"encoding/hex"
+	"fmt"
 	"log"
 	"os"
 )
 
-var defaultdebug *log.Logger = log.New(os.Stdout, "DEBUG", log.Ldate|log.Ltime|log.Lmicroseconds)
+var defaultdebug *log.Logger = log.New(os.Stdout, "DEBUG", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile)
 
 func init() {
 	if os.Getenv("LOG") != "DEBUG" {
@@ -19,7 +20,7 @@ func init() {
 }
 
 func Debugf(format string, v ...interface{}) {
-	defaultdebug.Printf(format, v...)
+	defaultdebug.Output(2, fmt.Sprintf(format, v...))
 }
 
 func Short(i string) string {
