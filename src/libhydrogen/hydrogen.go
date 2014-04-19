@@ -7,6 +7,7 @@ import (
 	"sort"
 	"sync"
 	"time"
+	"util"
 
 	"libhydrogen/message"
 
@@ -80,12 +81,14 @@ func (h *Hydrogen) GetBalance(account string) (uint64, error) {
 
 func (h *Hydrogen) handleVote(v message.Vote) {
 	h.lock.Lock()
+	util.Debugf("vote recieved %v", v)
 	h.votes = append(h.votes, v)
 	h.lock.Unlock()
 }
 
 func (h *Hydrogen) handleChange(c message.Change) {
 	h.lock.Lock()
+	util.Debugf("change recieved %v", c)
 	h.changes = append(h.changes, c)
 	h.lock.Unlock()
 }
