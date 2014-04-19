@@ -5,9 +5,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/hex"
 	"math/big"
 	"net"
 	"time"
+
+	"util"
 )
 
 import _ "crypto/sha512"
@@ -78,7 +81,7 @@ func (n *Node) tlsCert() tls.Certificate {
 
 	template := &x509.Certificate{
 		SerialNumber: new(big.Int).SetInt64(0),
-		Subject:      pkix.Name{CommonName: n.Account},
+		Subject:      pkix.Name{CommonName: hex.EncodeToString([]byte(util.KeyString(n.Key)))},
 		NotBefore:    NotBefore,
 		NotAfter:     NotAfter,
 		KeyUsage:     x509.KeyUsageCertSign | x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,

@@ -9,13 +9,14 @@ import (
 
 func TestNode(t *testing.T) {
 	priv := util.GenKey()
+	priv2 := util.GenKey()
 
-	N1 := NewNode("account1", priv, "ssl://test_machine:20")
+	N1 := NewNode(priv, "ssl://test_machine:20")
 	N1c := make(chan *NeighborNode)
 	N1.AddListener("hydrogen", N1c)
 	N1.Listen("127.0.0.1:2002")
 
-	N2 := NewNode("account2", priv, "ssl://test_machine:20")
+	N2 := NewNode(priv2, "ssl://test_machine:20")
 	N2c := make(chan *NeighborNode)
 	N2.AddListener("hydrogen", N2c)
 	go N2.Connect("127.0.0.1:2002")
@@ -28,9 +29,9 @@ func TestNode(t *testing.T) {
 		t.Fatalf("Expected 1 Neighbor got %s", ns)
 	}
 
-	N2.GetNeighbor("account1").Write([]byte("Foo"))
+	N2.GetNeighbor(util.KeyString(priv)).Write([]byte("Foo"))
 	b := make([]byte, 4)
-	io.ReadAtLeast(N1.GetNeighbor("account2"), b, 1)
+	io.ReadAtLeast(N1.GetNeighbor(util.KeyString(priv2)), b, 1)
 
 	if b[0] != 'F' {
 		t.Fatal("Expected leading F got %s", b)

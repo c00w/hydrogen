@@ -3,12 +3,12 @@ package libnode
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 )
 
 // A connection to a neighbor
 type NeighborNode struct {
 	*tls.Conn
-	Account  string
 	Protocol string
 }
 
@@ -47,13 +47,13 @@ func NewNeighborNode(c *tls.Conn) *NeighborNode {
 
 	n := new(NeighborNode)
 	n.Conn = c
-	n.Account = n.account()
 	n.Protocol = n.protocol()
 	return n
 }
 
-func (n *NeighborNode) account() string {
-	return n.Conn.ConnectionState().PeerCertificates[0].Subject.CommonName
+func (n *NeighborNode) Account() string {
+	s, _ := hex.DecodeString(n.Conn.ConnectionState().PeerCertificates[0].Subject.CommonName)
+	return string(s)
 }
 
 func (n *NeighborNode) protocol() string {

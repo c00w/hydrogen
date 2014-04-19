@@ -13,8 +13,8 @@ func TestHydrogen(t *testing.T) {
 	key1 := util.GenKey()
 	key2 := util.GenKey()
 
-	n1 := libnode.NewNode("node1", key1, "location1")
-	n2 := libnode.NewNode("node2", key2, "location2")
+	n1 := libnode.NewNode(key1, "location1")
+	n2 := libnode.NewNode(key2, "location2")
 
 	l := NewLedger()
 	l.AddEntry(util.KeyString(key1), "location1", 100)
@@ -34,8 +34,8 @@ func TestHydrogen(t *testing.T) {
 	h1 := newHydrogen(l, b1, tc1)
 	h2 := newHydrogen(l, b2, tc2)
 
-	NewMessagePasser(n1, key1, h1)
-	NewMessagePasser(n2, key2, h2)
+	NewMessagePasser(n1, h1)
+	NewMessagePasser(n2, h2)
 
 	node2 := util.KeyString(key2)
 

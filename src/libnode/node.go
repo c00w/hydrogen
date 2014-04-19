@@ -7,7 +7,6 @@ import (
 )
 
 type Node struct {
-	Account  string
 	Key      *ecdsa.PrivateKey
 	Location string
 
@@ -16,9 +15,8 @@ type Node struct {
 	listeners map[string]chan *NeighborNode
 }
 
-func NewNode(Account string, Key *ecdsa.PrivateKey, Location string) *Node {
+func NewNode(Key *ecdsa.PrivateKey, Location string) *Node {
 	n := &Node{
-		Account,
 		Key,
 		Location,
 		&sync.RWMutex{},
@@ -49,7 +47,7 @@ func (n *Node) handleConn(c *tls.Conn) {
 	N := NewNeighborNode(c)
 	n.lock.Lock()
 	defer n.lock.Unlock()
-	n.neighbors[N.Account] = N
+	n.neighbors[N.Account()] = N
 	o, ok := n.listeners[N.Protocol]
 	if ok {
 		o <- N

@@ -234,7 +234,7 @@ func (h *Hydrogen) createVote() message.Vote {
 	s := sha512.New()
 	cl.Hash(s)
 	t.Hash(s)
-	s.Write([]byte(h.mp.node.Account))
+	s.Write([]byte(util.KeyString(h.mp.node.Key)))
 
 	a := message.NewSignedAuthorization(ns, h.mp.node.Key, s.Sum(nil))
 	v.SetAuthorization(a)

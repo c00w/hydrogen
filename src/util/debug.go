@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/hex"
 	"log"
 	"os"
 )
@@ -19,4 +20,8 @@ func init() {
 
 func Debugf(format string, v ...interface{}) {
 	defaultdebug.Printf(format, v...)
+}
+
+func Short(i string) string {
+	return hex.EncodeToString([]byte(i))[:8]
 }

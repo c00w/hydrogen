@@ -15,7 +15,7 @@ func TestTLSConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	N := NewNode("account", priv, "ssl://test_machine:20")
+	N := NewNode(priv, "ssl://test_machine:20")
 
 	tc := make(chan *tls.Conn)
 	N.tlsListen("127.0.0.1:2001", tc)

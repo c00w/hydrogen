@@ -1,13 +1,13 @@
 package libhydrogen
 
 import (
-	"crypto/ecdsa"
 	"crypto/sha512"
 	"hash"
 	"log"
 
 	"libhydrogen/message"
 	"libnode"
+	"util"
 
 	capnp "github.com/glycerine/go-capnproto"
 )
@@ -20,17 +20,14 @@ type Handler interface {
 
 type MessagePasser struct {
 	node        *libnode.Node
-	key         *ecdsa.PrivateKey
 	handler     Handler
 	newNeighbor chan *libnode.NeighborNode
 	newMessage  chan message.Message
 }
 
-func NewMessagePasser(n *libnode.Node, key *ecdsa.PrivateKey,
-	h Handler) *MessagePasser {
+func NewMessagePasser(n *libnode.Node, h Handler) *MessagePasser {
 	mp := &MessagePasser{
 		n,
-		key,
 		h,
 		make(chan *libnode.NeighborNode),
 		make(chan message.Message),
@@ -63,7 +60,7 @@ func (mp *MessagePasser) handleConn(c *libnode.NeighborNode) {
 		m := message.ReadRootMessage(seg)
 		s := sha512.New()
 		if err := m.Verify(mp.handler, s); err != nil {
-			log.Printf("Node %s: %s", mp.node.Account, err)
+			log.Printf("Node %s: %s", util.KeyString(mp.node.Key), err)
 			panic(err)
 			continue
 		}
@@ -87,7 +84,7 @@ func (mp *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segmen
 	run := sha512.New()
 	c.Hash(run)
 
-	a := message.NewSignedAuthorization(n, mp.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.node.Key, run.Sum(nil))
 
 	al := message.NewAuthorizationList(n, 1)
 	capnp.PointerList(al).Set(0, capnp.Object(a))
@@ -105,7 +102,7 @@ func (mp *MessagePasser) CreateMessageFromVote(v message.Vote) *capnp.Segment {
 	run := sha512.New()
 	v.Hash(run)
 
-	a := message.NewSignedAuthorization(n, mp.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.node.Key, run.Sum(nil))
 
 	al := message.NewAuthorizationList(n, 1)
 	capnp.PointerList(al).Set(0, capnp.Object(a))
@@ -142,7 +139,7 @@ func (mp *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*c
 		capnp.PointerList(l).Set(i, capnp.Object(v))
 	}
 
-	a := message.NewSignedAuthorization(n, mp.key, run.Sum(nil))
+	a := message.NewSignedAuthorization(n, mp.node.Key, run.Sum(nil))
 
 	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
 
@@ -164,12 +161,15 @@ func (mp *MessagePasser) passMessage(m message.Message, run hash.Hash) {
 
 	seen := make(map[string]bool)
 
+	util.Debugf("Processing message %v", m)
 	for _, a := range m.AuthChain().ToArray() {
+		util.Debugf("Host %v seen", a)
 		seen[a.Account()] = true
 	}
 
 	for _, name := range mp.node.ListNeighbors() {
 		if !seen[name] {
+			util.Debugf("Host %v not seen, sending message", util.Short(name))
 			n.WriteTo(mp.node.GetNeighbor(name))
 		}
 	}

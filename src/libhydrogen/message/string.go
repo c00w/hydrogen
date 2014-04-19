@@ -1,16 +1,12 @@
 package message
 
 import (
-	"encoding/hex"
 	"fmt"
+	"util"
 )
 
 func shortb(b []byte) string {
-	return short(string(b))
-}
-
-func short(i string) string {
-	return hex.EncodeToString([]byte(i))[:8]
+	return util.Short(string(b))
 }
 
 func (m Message) String() string {
@@ -46,7 +42,7 @@ func (cl Change_List) String() string {
 }
 
 func (a Authorization) String() string {
-	return fmt.Sprintf("Authorization{%s...}", short(a.Account()))
+	return fmt.Sprintf("Authorization{%s...}", util.Short(a.Account()))
 }
 
 func (c Change) String() string {

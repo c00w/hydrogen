@@ -30,15 +30,15 @@ func TestMessageManipulation(t *testing.T) {
 	key1 := util.GenKey()
 	key2 := util.GenKey()
 
-	n1 := libnode.NewNode("node1", key1, "location1")
-	n2 := libnode.NewNode("node2", key2, "location2")
+	n1 := libnode.NewNode(key1, "location1")
+	n2 := libnode.NewNode(key2, "location2")
 
 	l := NewLedger()
 	l.AddEntry(util.KeyString(key1), "location1", 100)
 	l.AddEntry(util.KeyString(key2), "location2", 100)
 
-	h1 := NewMessagePasser(n1, key1, nullhandler{l})
-	h2 := NewMessagePasser(n2, key2, nullhandler{l})
+	h1 := NewMessagePasser(n1, nullhandler{l})
+	h2 := NewMessagePasser(n2, nullhandler{l})
 
 	s1 := capnp.NewBuffer(nil)
 	c := message.NewChange(s1)
@@ -81,9 +81,9 @@ func TestMessagePassing(t *testing.T) {
 	key2 := util.GenKey()
 	key3 := util.GenKey()
 
-	n1 := libnode.NewNode("node1", key1, "location1")
-	n2 := libnode.NewNode("node2", key2, "location2")
-	n3 := libnode.NewNode("node3", key3, "location3")
+	n1 := libnode.NewNode(key1, "location1")
+	n2 := libnode.NewNode(key2, "location2")
+	n3 := libnode.NewNode(key3, "location3")
 
 	l := NewLedger()
 	l.AddEntry(util.KeyString(key1), "location1", 100)
@@ -92,9 +92,9 @@ func TestMessagePassing(t *testing.T) {
 
 	tc := make(chan message.Message)
 
-	h1 := NewMessagePasser(n1, key1, nullhandler{l})
-	NewMessagePasser(n2, key2, nullhandler{l})
-	NewMessagePasser(n3, key3, channelhandler{l, tc})
+	h1 := NewMessagePasser(n1, nullhandler{l})
+	NewMessagePasser(n2, nullhandler{l})
+	NewMessagePasser(n3, channelhandler{l, tc})
 
 	n1.Listen("127.0.0.1:3001")
 	n2.Listen("127.0.0.1:3002")
