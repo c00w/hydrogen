@@ -43,3 +43,22 @@ func NewSignedVote(c []Change, key *ecdsa.PrivateKey) Vote {
 	v.SetAuthorization(a)
 	return v
 }
+
+func NewSignedTransaction(key *ecdsa.PrivateKey, destination string, amount uint64) Change {
+	n := capnp.NewBuffer(nil)
+
+	c := NewRootChange(n)
+	c.SetCreated(NewTimeNow(n))
+
+	t := NewTransactionChange(n)
+	t.SetSource([]byte(util.KeyString(key)))
+	t.SetDestination([]byte(destination))
+	t.SetAmount(amount)
+
+	c.Type().SetTransaction(t)
+
+	h := util.Hash(c.Created(), c.Type().Transaction())
+	auth := NewSignedAuthorization(n, key, []byte(h))
+	c.SetAuthorization(auth)
+	return c
+}
