@@ -9,6 +9,10 @@ all: bin/hydrogend
 test: all
 	go test libnode -race
 	go test libhydrogen -race
+	go test libhelium -race
+
+src/libhelium/account.capnp.go: src/libhelium/account.capnp bin/capnpc-go
+	capnp compile -ogo src/libhelium/account.capnp
 
 src/libhydrogen/message/message.capnp.go: src/libhydrogen/message/message.capnp bin/capnpc-go
 	capnp compile -ogo src/libhydrogen/message/message.capnp
@@ -32,13 +36,15 @@ pkg/${PLATFORM}/libhydrogen.a: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydr
 	go fmt libhydrogen
 	go install libhydrogen
 
-bin/hydrogend: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydrogen.a src/hydrogend/*.go
+pkg/${PLATFORM}/libhelium.a: pkg/${PLATFORM}/libnode.a src/libhelium/account.capnp.go src/libhelium/*.go
+	go fmt libhelium
+	go install libhelium
+
+bin/hydrogend: pkg/${PLATFORM}/libnode.a pkg/${PLATFORM}/libhydrogen.a pkg/${PLATFORM}/libhelium.a src/hydrogend/*.go
 	go fmt hydrogend
 	go install hydrogend
 
 clean:
 	rm -r bin
 	rm -r pkg
-
-
 

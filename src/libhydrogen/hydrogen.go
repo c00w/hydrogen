@@ -77,6 +77,12 @@ func (h *Hydrogen) GetBalance(account string) (uint64, error) {
 	return entry.Balance, nil
 }
 
+func (h *Hydrogen) GetLedger() *Ledger {
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+	return h.currentledger
+}
+
 func (h *Hydrogen) handleVote(v message.Vote) {
 	h.lock.Lock()
 	util.Debugf("vote recieved %v", v)
