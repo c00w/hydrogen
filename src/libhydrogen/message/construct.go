@@ -25,3 +25,21 @@ func NewSignedRateChange(r RateVote, k *ecdsa.PrivateKey) Change {
 	c.SetAuthorization(NewSignedAuthorization(n, k, []byte(h)))
 	return c
 }
+
+func NewSignedVote(c []Change, key *ecdsa.PrivateKey) Vote {
+	ns := capnp.NewBuffer(nil)
+
+	v := NewRootVote(ns)
+	cl := NewChangeList(ns, len(c))
+	for i, v := range c {
+		capnp.PointerList(cl).Set(i, capnp.Object(v))
+	}
+	v.SetVotes(cl)
+	v.SetTime(NewTimeNow(ns))
+
+	h := util.Hash(v.Votes(), v.Time())
+
+	a := NewSignedAuthorization(ns, key, []byte(h))
+	v.SetAuthorization(a)
+	return v
+}

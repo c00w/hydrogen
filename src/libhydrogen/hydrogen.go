@@ -1,7 +1,6 @@
 package libhydrogen
 
 import (
-	"crypto/sha512"
 	"errors"
 	"log"
 	"sort"
@@ -10,8 +9,6 @@ import (
 
 	"libhydrogen/message"
 	"util"
-
-	capnp "github.com/glycerine/go-capnproto"
 )
 
 type Hydrogen struct {
@@ -111,7 +108,7 @@ func (h *Hydrogen) eventloop() {
 
 		h.changes = append(h.changes, ratechange)
 
-		vote := h.createVote()
+		vote := message.NewSignedVote(h.changes, h.mp.node.Key)
 		h.lock.Unlock()
 
 		h.mp.SendVote(vote)
@@ -241,28 +238,4 @@ func (h *Hydrogen) cleanupVotes(t TimeRange) {
 	}
 
 	h.votes = votes
-}
-
-func (h *Hydrogen) createVote() message.Vote {
-	ns := capnp.NewBuffer(nil)
-
-	v := message.NewRootVote(ns)
-	cl := message.NewChangeList(ns, len(h.changes))
-	for i, v := range h.changes {
-		capnp.PointerList(cl).Set(i, capnp.Object(v))
-	}
-	v.SetVotes(cl)
-
-	t := message.NewTime(ns)
-	t.SetTime(time.Now())
-	v.SetTime(t)
-
-	s := sha512.New()
-	cl.Hash(s)
-	t.Hash(s)
-	s.Write([]byte(util.KeyString(h.mp.node.Key)))
-
-	a := message.NewSignedAuthorization(ns, h.mp.node.Key, s.Sum(nil))
-	v.SetAuthorization(a)
-	return v
 }
