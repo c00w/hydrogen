@@ -5,7 +5,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha512"
-	"hash"
 	"math/big"
 
 	capnp "github.com/glycerine/go-capnproto"
@@ -26,27 +25,8 @@ func (k Key) ECDSA() *ecdsa.PublicKey {
 	return &ecdsa.PublicKey{elliptic.P521(), bigint(k.X()), bigint(k.Y())}
 }
 
-func (k Key) Hash(h hash.Hash) {
-	h.Write(k.X())
-	h.Write(k.Y())
-}
-
 func (s Signature) Parse() (*big.Int, *big.Int) {
 	return bigint(s.R()), bigint(s.S())
-}
-
-func (s Signature) Hash(h hash.Hash) {
-	h.Write(s.R())
-	h.Write(s.S())
-}
-
-func (ks KeySignature) Hash(h hash.Hash) {
-	ks.Key().Hash(h)
-	ks.Signature().Hash(h)
-}
-
-func (a Authorization) Hash(h hash.Hash) {
-	a.Signatures().At(0).Hash(h)
 }
 
 func (a Authorization) Account() string {
