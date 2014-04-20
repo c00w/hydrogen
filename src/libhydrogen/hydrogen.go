@@ -7,9 +7,9 @@ import (
 	"sort"
 	"sync"
 	"time"
-	"util"
 
 	"libhydrogen/message"
+	"util"
 
 	capnp "github.com/glycerine/go-capnproto"
 )
@@ -17,8 +17,9 @@ import (
 type Hydrogen struct {
 	currentledger *Ledger
 
-	votes   []message.Vote
-	newvote chan message.Vote
+	votes      []message.Vote
+	newvote    chan message.Vote
+	votetiming map[string]time.Time
 
 	changes   []message.Change
 	newchange chan message.Change
@@ -37,7 +38,7 @@ func NewHydrogen(l *Ledger, b *BlockTimer) *Hydrogen {
 }
 
 func newHydrogen(l *Ledger, b *BlockTimer, c chan []message.Vote) *Hydrogen {
-	return &Hydrogen{l, nil, make(chan message.Vote),
+	return &Hydrogen{l, nil, make(chan message.Vote), make(map[string]time.Time),
 		nil, make(chan message.Change), b, nil, c, &sync.RWMutex{}}
 }
 
@@ -83,6 +84,7 @@ func (h *Hydrogen) handleVote(v message.Vote) {
 	h.lock.Lock()
 	util.Debugf("vote recieved %v", v)
 	h.votes = append(h.votes, v)
+	h.votetiming[util.Hash(v)] = time.Now()
 	h.lock.Unlock()
 }
 
@@ -98,12 +100,16 @@ func (h *Hydrogen) eventloop() {
 		bt := <-h.blocktimer.Chan()
 		h.lock.Lock()
 
+		ratechange := h.calculateRateChange()
+
 		appliedchanges, appliedvotes := h.applyVotes(bt)
 
 		h.blocktimer.SetTau(h.currentledger.Tau)
 
 		h.cleanupChanges(appliedchanges)
 		h.cleanupVotes(bt)
+
+		h.changes = append(h.changes, ratechange)
 
 		vote := h.createVote()
 		h.lock.Unlock()
@@ -116,12 +122,40 @@ func (h *Hydrogen) eventloop() {
 	}
 }
 
+func (h *Hydrogen) calculateRateChange() message.Change {
+	times := make([]time.Time, 0, len(h.votetiming))
+
+	for _, t := range h.votetiming {
+		times = append(times, t)
+	}
+
+	h.votetiming = make(map[string]time.Time)
+
+	sort.Sort(earliest(times))
+
+	if len(times) == 0 {
+		return message.NewSignedRateChange(message.RATEVOTE_CONSTANT, h.mp.node.Key)
+	}
+
+	median := times[len(times)/2]
+
+	estimatedtau := median.Sub(h.currentledger.Created)
+
+	if estimatedtau > h.currentledger.Tau/2 {
+		return message.NewSignedRateChange(message.RATEVOTE_INCREASE, h.mp.node.Key)
+	}
+
+	if estimatedtau < h.currentledger.Tau/4 {
+		return message.NewSignedRateChange(message.RATEVOTE_DECREASE, h.mp.node.Key)
+	}
+
+	return message.NewSignedRateChange(message.RATEVOTE_CONSTANT, h.mp.node.Key)
+}
+
 func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 
 	changes := make(map[string]message.Change)
 	changecount := make(map[string]uint)
-
-	s := sha512.New()
 
 	appliedvotes := make([]message.Vote, 0)
 	for _, v := range h.votes {
@@ -132,9 +166,7 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 
 	for _, v := range appliedvotes {
 		for _, c := range v.Votes().ToArray() {
-			s.Reset()
-			c.Hash(s)
-			id := string(s.Sum(nil))
+			id := util.Hash(c)
 			if _, ok := changes[id]; !ok {
 				changes[id] = c
 			}
@@ -168,21 +200,15 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 func (h *Hydrogen) cleanupChanges(applied []message.Change) {
 	seen := make(map[string]bool)
 
-	s := sha512.New()
-
 	for _, v := range applied {
-		s.Reset()
-		v.Hash(s)
-		seen[string(s.Sum(nil))] = true
+		seen[util.Hash(v)] = true
 	}
 
 	notseen := make([]message.Change, 0)
 
 	for _, v := range h.changes {
-		s.Reset()
-		v.Hash(s)
 
-		ok := seen[string(s.Sum(nil))]
+		ok := seen[util.Hash(v)]
 		if !ok {
 			notseen = append(notseen, v)
 		}

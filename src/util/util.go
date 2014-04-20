@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha512"
+	"hash"
 )
 
 func KeyString(k *ecdsa.PrivateKey) string {
@@ -21,4 +22,16 @@ func GenKey() *ecdsa.PrivateKey {
 		panic(e)
 	}
 	return k
+}
+
+type Hashable interface {
+	Hash(h hash.Hash)
+}
+
+func Hash(items ...Hashable) string {
+	s := sha512.New()
+	for _, item := range items {
+		item.Hash(s)
+	}
+	return string(s.Sum(nil))
 }
