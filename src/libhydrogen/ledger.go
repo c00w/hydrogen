@@ -2,12 +2,12 @@ package libhydrogen
 
 import (
 	"crypto/ecdsa"
-	"crypto/sha512"
 	"errors"
 	"fmt"
 	"time"
 
 	"libhydrogen/message"
+	"util"
 )
 
 type Ledger struct {
@@ -28,12 +28,6 @@ func (l *Ledger) Verify(auth message.Authorization, hash []byte) error {
 
 	ks := auth.Signatures().At(0)
 
-	h := sha512.New()
-	ks.Key().Hash(h)
-	if string(h.Sum(nil)) != l.Accounts[auth.Account()].Key {
-		return errors.New("invalid key")
-	}
-
 	key := ks.Key().ECDSA()
 	r, s := ks.Signature().Parse()
 	ok := ecdsa.Verify(key, hash, r, s)
@@ -49,15 +43,12 @@ func (l *Ledger) AddEntry(key string, location string, balance uint64) {
 
 func (l *Ledger) Apply(c message.Change) error {
 
-	s := sha512.New()
-	c.Created().Hash(s)
-
 	switch c.Type().Which() {
 	case message.CHANGETYPE_TRANSACTION:
 		t := c.Type().Transaction()
-		t.Hash(s)
+		h := util.Hash(c.Created(), t)
 
-		err := l.Verify(c.Authorization(), s.Sum(nil))
+		err := l.Verify(c.Authorization(), []byte(h))
 		if err != nil {
 			return err
 		}
@@ -87,9 +78,9 @@ func (l *Ledger) Apply(c message.Change) error {
 
 	case message.CHANGETYPE_LOCATION:
 		lo := c.Type().Location()
-		lo.Hash(s)
+		h := util.Hash(c.Created(), lo)
 
-		err := l.Verify(c.Authorization(), s.Sum(nil))
+		err := l.Verify(c.Authorization(), []byte(h))
 		if err != nil {
 			return err
 		}
