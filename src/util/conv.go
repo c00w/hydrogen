@@ -1,6 +1,6 @@
-package message
+package util
 
-func uint64toba(u uint64) []byte {
+func UInt64ToBA(u uint64) []byte {
 	b := make([]byte, 8)
 	for i, _ := range b {
 		b[i] = byte((u >> uint(8*i)) & 0xff)
@@ -8,7 +8,7 @@ func uint64toba(u uint64) []byte {
 	return b
 }
 
-func uint32toba(u uint32) []byte {
+func UInt32ToBA(u uint32) []byte {
 	b := make([]byte, 4)
 	for i, _ := range b {
 		b[i] = byte((u >> uint(8*i)) & 0xff)
@@ -16,7 +16,7 @@ func uint32toba(u uint32) []byte {
 	return b
 }
 
-func uint16toba(u uint16) []byte {
+func UInt16ToBA(u uint16) []byte {
 	b := make([]byte, 2)
 	for i, _ := range b {
 		b[i] = byte((u >> uint(8*i)) & 0xff)

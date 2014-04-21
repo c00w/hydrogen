@@ -13,7 +13,7 @@ func NewSignedRateChange(r RateVote, k *ecdsa.PrivateKey) Change {
 	n := capnp.NewBuffer(nil)
 
 	c := NewRootChange(n)
-	c.SetCreated(NewTimeNow(n))
+	c.SetCreated(util.NewTimeNow(n))
 
 	rc := NewRateChange(n)
 	rc.SetVote(r)
@@ -35,7 +35,7 @@ func NewSignedVote(c []Change, key *ecdsa.PrivateKey) Vote {
 		capnp.PointerList(cl).Set(i, capnp.Object(v))
 	}
 	v.SetVotes(cl)
-	v.SetTime(NewTimeNow(ns))
+	v.SetTime(util.NewTimeNow(ns))
 
 	h := util.Hash(v.Votes(), v.Time())
 
@@ -48,7 +48,7 @@ func NewSignedTransaction(key *ecdsa.PrivateKey, destination string, amount uint
 	n := capnp.NewBuffer(nil)
 
 	c := NewRootChange(n)
-	c.SetCreated(NewTimeNow(n))
+	c.SetCreated(util.NewTimeNow(n))
 
 	t := NewTransactionChange(n)
 	t.SetSource([]byte(util.KeyString(key)))

@@ -16,11 +16,12 @@ func TestTLSConnection(t *testing.T) {
 	}
 
 	N := NewNode(priv, "ssl://test_machine:20")
+	N.listeners["hydrogen"] = nil
 
 	tc := make(chan *tls.Conn)
 	N.tlsListen("127.0.0.1:2001", tc)
 
-	c2 := N.tlsConnect("127.0.0.1:2001")
+	c2 := N.tlsConnect("127.0.0.1:2001", "hydrogen")
 	c1 := <-tc
 
 	n, err := c1.Write([]byte("Foo"))

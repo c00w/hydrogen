@@ -20,9 +20,6 @@ func TestHydrogen(t *testing.T) {
 	l.AddEntry(util.KeyString(key1), "location1", 100)
 	l.AddEntry(util.KeyString(key2), "location2", 100)
 
-	n1.Listen("localhost:4005")
-	n2.Connect("localhost:4005")
-
 	now := time.Now()
 
 	b1 := NewBlockTimer(time.Second, now)
@@ -36,6 +33,9 @@ func TestHydrogen(t *testing.T) {
 
 	NewMessagePasser(n1, h1)
 	NewMessagePasser(n2, h2)
+
+	n1.Listen("localhost:4005")
+	n2.Connect("localhost:4005", "hydrogen")
 
 	node2 := util.KeyString(key2)
 

@@ -3,6 +3,8 @@ using Go = import "../../github.com/glycerine/go-capnproto/go.capnp";
 $Go.package("message");
 $Go.import("message");
 
+using import "../../util/time.capnp".Time;
+
 @0xf5151606f45c93ef;
 
 struct Authorization {
@@ -22,11 +24,6 @@ struct Signature {
 struct KeySignature{
     key @0: Key;
     signature @1: Signature;
-}
-
-struct Time {
-    seconds @0: UInt64;
-    nanoSeconds @1: UInt32;
 }
 
 struct TransactionChange {

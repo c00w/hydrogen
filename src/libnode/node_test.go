@@ -19,7 +19,7 @@ func TestNode(t *testing.T) {
 	N2 := NewNode(priv2, "ssl://test_machine:20")
 	N2c := make(chan *NeighborNode)
 	N2.AddListener("hydrogen", N2c)
-	go N2.Connect("127.0.0.1:2002")
+	go N2.Connect("127.0.0.1:2002", "hydrogen")
 
 	<-N2c
 	<-N1c

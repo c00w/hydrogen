@@ -4,6 +4,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/tls"
 	"sync"
+
+	"util"
 )
 
 type Node struct {
@@ -32,13 +34,14 @@ func (n *Node) Listen(address string) {
 	go n.handleConns(tc)
 }
 
-func (n *Node) Connect(address string) {
-	c := n.tlsConnect(address)
+func (n *Node) Connect(address, protocol string) {
+	c := n.tlsConnect(address, protocol)
 	n.handleConn(c)
 }
 
 func (n *Node) handleConns(tc chan *tls.Conn) {
 	for c := range tc {
+		util.Debugf("Recieved connection")
 		n.handleConn(c)
 	}
 }
@@ -52,6 +55,14 @@ func (n *Node) handleConn(c *tls.Conn) {
 	if ok {
 		o <- N
 	}
+}
+
+func (n *Node) protocols() []string {
+	l := make([]string, 0, len(n.listeners))
+	for p, _ := range n.listeners {
+		l = append(l, p)
+	}
+	return l
 }
 
 func (n *Node) GetNeighbor(account string) *NeighborNode {

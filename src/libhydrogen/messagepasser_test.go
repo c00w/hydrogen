@@ -98,8 +98,8 @@ func TestMessagePassing(t *testing.T) {
 
 	n1.Listen("127.0.0.1:3001")
 	n2.Listen("127.0.0.1:3002")
-	n2.Connect("127.0.0.1:3001")
-	n3.Connect("127.0.0.1:3002")
+	n2.Connect("127.0.0.1:3001", "hydrogen")
+	n3.Connect("127.0.0.1:3002", "hydrogen")
 
 	n := capnp.NewBuffer(nil)
 	c := message.NewChange(n)

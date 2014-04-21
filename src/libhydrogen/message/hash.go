@@ -2,6 +2,8 @@ package message
 
 import (
 	"hash"
+
+	"util"
 )
 
 func (m MessagePayload) Hash(h hash.Hash) {
@@ -12,11 +14,6 @@ func (m MessagePayload) Hash(h hash.Hash) {
 		m.Change().Hash(h)
 	default:
 	}
-}
-
-func (t Time) Hash(h hash.Hash) {
-	h.Write(uint64toba(t.Seconds()))
-	h.Write(uint32toba(t.NanoSeconds()))
 }
 
 func (c Change_List) Hash(h hash.Hash) {
@@ -50,7 +47,7 @@ func (c Change) Hash(h hash.Hash) {
 func (t TransactionChange) Hash(h hash.Hash) {
 	h.Write(t.Source())
 	h.Write(t.Destination())
-	h.Write(uint64toba(t.Amount()))
+	h.Write(util.UInt64ToBA(t.Amount()))
 }
 
 func (l LocationChange) Hash(h hash.Hash) {
@@ -63,7 +60,7 @@ func (d DropChange) Hash(h hash.Hash) {
 }
 
 func (r RateChange) Hash(h hash.Hash) {
-	h.Write(uint16toba(uint16(r.Vote())))
+	h.Write(util.UInt16ToBA(uint16(r.Vote())))
 }
 
 func (k Key) Hash(h hash.Hash) {

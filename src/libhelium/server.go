@@ -3,6 +3,7 @@ package libhelium
 import (
 	"libhydrogen"
 	"libnode"
+	"util"
 
 	capnp "github.com/glycerine/go-capnproto"
 )
@@ -32,11 +33,14 @@ func (s *Server) eventloop() {
 }
 
 func (s *Server) dumpLedger(n *libnode.NeighborNode) {
+	util.Debugf("Recieved Request")
 	l := s.ledgerSource.GetLedger()
 
+	util.Debugf("Encoding Ledger")
 	b := capnp.NewBuffer(nil)
 	le := NewRootLedger(b)
 	le.SetTau(l.Tau.Nanoseconds())
+	le.SetCreated(util.NewTimeFrom(b, l.Created))
 
 	la := NewAccountList(b, len(l.Accounts))
 	i := 0
@@ -50,5 +54,10 @@ func (s *Server) dumpLedger(n *libnode.NeighborNode) {
 	}
 
 	le.SetAccounts(la)
-	b.WriteTo(n)
+	util.Debugf("Writing ledger")
+	_, err := b.WriteTo(n)
+	if err != nil {
+		util.Debugf("Error: %v", err)
+	}
+	util.Debugf("Done")
 }

@@ -33,7 +33,7 @@ func (n *Node) tlsListen(address string, t chan *tls.Conn) {
 			}
 
 			go func(n *Node, c net.Conn, t chan *tls.Conn) {
-				nc := tls.Server(c, n.tlsConfig())
+				nc := tls.Server(c, n.tlsConfig(n.protocols()...))
 				err = nc.Handshake()
 
 				if err != nil {
@@ -47,8 +47,8 @@ func (n *Node) tlsListen(address string, t chan *tls.Conn) {
 }
 
 // Connect to an address and wrap incoming connections in TLS
-func (n *Node) tlsConnect(address string) *tls.Conn {
-	c, err := tls.Dial("tcp", address, n.tlsConfig())
+func (n *Node) tlsConnect(address string, proto string) *tls.Conn {
+	c, err := tls.Dial("tcp", address, n.tlsConfig(proto))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -56,7 +56,7 @@ func (n *Node) tlsConnect(address string) *tls.Conn {
 }
 
 // Generate a TLS config
-func (n *Node) tlsConfig() *tls.Config {
+func (n *Node) tlsConfig(proto ...string) *tls.Config {
 	return &tls.Config{
 		Certificates:             []tls.Certificate{n.tlsCert()},
 		PreferServerCipherSuites: true,
@@ -65,7 +65,7 @@ func (n *Node) tlsConfig() *tls.Config {
 		ClientAuth:               tls.RequireAnyClientCert,
 		CipherSuites:             []uint16{tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
 		InsecureSkipVerify:       true,
-		NextProtos:               []string{"hydrogen"},
+		NextProtos:               proto,
 	}
 }
 

@@ -28,10 +28,6 @@ func (v Vote) String() string {
 	return fmt.Sprintf("Vote{%v, %v, %v}", v.Votes(), v.Time(), v.Authorization())
 }
 
-func (v Time) String() string {
-	return fmt.Sprintf("Time{%v}", v.Time())
-}
-
 func (cl Change_List) String() string {
 	s := "Change_List{"
 	for i := 0; i < cl.Len(); i++ {

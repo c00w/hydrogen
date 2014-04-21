@@ -17,6 +17,9 @@ src/libhelium/account.capnp.go: src/libhelium/account.capnp bin/capnpc-go
 src/libhydrogen/message/message.capnp.go: src/libhydrogen/message/message.capnp bin/capnpc-go
 	capnp compile -ogo src/libhydrogen/message/message.capnp
 
+src/util/time.capnp.go: src/util/time.capnp bin/capnpc-go
+	capnp compile -ogo src/util/time.capnp
+
 bin/capnpc-go:
 	go install github.com/glycerine/go-capnproto/capnpc-go
 
