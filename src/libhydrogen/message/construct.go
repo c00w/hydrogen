@@ -2,6 +2,7 @@ package message
 
 import (
 	"crypto/ecdsa"
+	"hash"
 
 	"util"
 
@@ -61,4 +62,61 @@ func NewSignedTransaction(key *ecdsa.PrivateKey, destination string, amount uint
 	auth := NewSignedAuthorization(n, key, []byte(h))
 	c.SetAuthorization(auth)
 	return c
+}
+
+func CreateMessageFromChange(c Change, key *ecdsa.PrivateKey) *capnp.Segment {
+	n := capnp.NewBuffer(nil)
+
+	m := NewRootMessage(n)
+	m.Payload().SetChange(c)
+
+	a := NewSignedAuthorization(n, key, []byte(util.Hash(c)))
+
+	al := NewAuthorizationList(n, 1)
+	capnp.PointerList(al).Set(0, capnp.Object(a))
+
+	m.SetAuthChain(al)
+	return n
+}
+
+func CreateMessageFromVote(v Vote, key *ecdsa.PrivateKey) *capnp.Segment {
+	n := capnp.NewBuffer(nil)
+
+	m := NewRootMessage(n)
+	m.Payload().SetVote(v)
+
+	a := NewSignedAuthorization(n, key, []byte(util.Hash(v)))
+
+	al := NewAuthorizationList(n, 1)
+	capnp.PointerList(al).Set(0, capnp.Object(a))
+
+	m.SetAuthChain(al)
+	return n
+}
+
+func AppendAuthMessage(m Message, run hash.Hash, key *ecdsa.PrivateKey) *capnp.Segment {
+
+	n := capnp.NewBuffer(nil)
+
+	m2 := NewRootMessage(n)
+
+	l := NewAuthorizationList(n, m.AuthChain().Len()+1)
+	for i, v := range m.AuthChain().ToArray() {
+		capnp.PointerList(l).Set(i, capnp.Object(v))
+	}
+
+	a := NewSignedAuthorization(n, key, run.Sum(nil))
+
+	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
+
+	m2.SetAuthChain(l)
+
+	switch m.Payload().Which() {
+	case MESSAGEPAYLOAD_VOTE:
+		m2.Payload().SetVote(m.Payload().Vote())
+	case MESSAGEPAYLOAD_CHANGE:
+		m2.Payload().SetChange(m.Payload().Change())
+	}
+
+	return n
 }

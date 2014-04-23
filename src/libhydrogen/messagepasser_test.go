@@ -30,20 +30,14 @@ func TestMessageManipulation(t *testing.T) {
 	key1 := util.GenKey()
 	key2 := util.GenKey()
 
-	n1 := libnode.NewNode(key1, "location1")
-	n2 := libnode.NewNode(key2, "location2")
-
 	l := NewLedger()
 	l.AddEntry(util.KeyString(key1), "location1", 100)
 	l.AddEntry(util.KeyString(key2), "location2", 100)
 
-	h1 := NewMessagePasser(n1, nullhandler{l})
-	h2 := NewMessagePasser(n2, nullhandler{l})
-
 	s1 := capnp.NewBuffer(nil)
 	c := message.NewChange(s1)
 
-	s2 := h1.CreateMessageFromChange(c)
+	s2 := message.CreateMessageFromChange(c, key1)
 	m := message.ReadRootMessage(s2)
 
 	err := m.Verify(l, sha512.New())
@@ -59,15 +53,13 @@ func TestMessageManipulation(t *testing.T) {
 	c.Hash(h)
 	m.AuthChain().ToArray()[0].Hash(h)
 
-	s3, m2o := h2.AppendAuthMessage(m, h)
+	s3 := message.AppendAuthMessage(m, h, key2)
 	m2 := message.ReadRootMessage(s3)
 
 	if m2.AuthChain().Len() != 2 {
 		for i, v := range m.AuthChain().ToArray() {
 			t.Logf("m.Authchain[%d] = %s", i, v.Account())
 		}
-
-		t.Logf("m20.len %d", m2o.AuthChain().Len())
 
 		for i, v := range m2.AuthChain().ToArray() {
 			t.Logf("m2.Authchain[%d] = %s", i, v.Account())

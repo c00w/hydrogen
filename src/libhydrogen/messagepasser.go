@@ -75,49 +75,13 @@ func (mp *MessagePasser) handleMessages() {
 	}
 }
 
-func (mp *MessagePasser) CreateMessageFromChange(c message.Change) *capnp.Segment {
-	n := capnp.NewBuffer(nil)
-
-	m := message.NewRootMessage(n)
-	m.Payload().SetChange(c)
-
-	run := sha512.New()
-	c.Hash(run)
-
-	a := message.NewSignedAuthorization(n, mp.node.Key, run.Sum(nil))
-
-	al := message.NewAuthorizationList(n, 1)
-	capnp.PointerList(al).Set(0, capnp.Object(a))
-
-	m.SetAuthChain(al)
-	return n
-}
-
-func (mp *MessagePasser) CreateMessageFromVote(v message.Vote) *capnp.Segment {
-	n := capnp.NewBuffer(nil)
-
-	m := message.NewRootMessage(n)
-	m.Payload().SetVote(v)
-
-	run := sha512.New()
-	v.Hash(run)
-
-	a := message.NewSignedAuthorization(n, mp.node.Key, run.Sum(nil))
-
-	al := message.NewAuthorizationList(n, 1)
-	capnp.PointerList(al).Set(0, capnp.Object(a))
-
-	m.SetAuthChain(al)
-	return n
-}
-
 func (mp *MessagePasser) SendChange(c message.Change) {
-	n := mp.CreateMessageFromChange(c)
+	n := message.CreateMessageFromChange(c, mp.node.Key)
 	mp.sendMessage(n)
 }
 
 func (mp *MessagePasser) SendVote(v message.Vote) {
-	n := mp.CreateMessageFromVote(v)
+	n := message.CreateMessageFromVote(v, mp.node.Key)
 	mp.sendMessage(n)
 }
 
@@ -128,36 +92,9 @@ func (mp *MessagePasser) sendMessage(n *capnp.Segment) {
 	mp.newMessage <- message.ReadRootMessage(n)
 }
 
-func (mp *MessagePasser) AppendAuthMessage(m message.Message, run hash.Hash) (*capnp.Segment, message.Message) {
-
-	n := capnp.NewBuffer(nil)
-
-	m2 := message.NewRootMessage(n)
-
-	l := message.NewAuthorizationList(n, m.AuthChain().Len()+1)
-	for i, v := range m.AuthChain().ToArray() {
-		capnp.PointerList(l).Set(i, capnp.Object(v))
-	}
-
-	a := message.NewSignedAuthorization(n, mp.node.Key, run.Sum(nil))
-
-	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
-
-	m2.SetAuthChain(l)
-
-	switch m.Payload().Which() {
-	case message.MESSAGEPAYLOAD_VOTE:
-		m2.Payload().SetVote(m.Payload().Vote())
-	case message.MESSAGEPAYLOAD_CHANGE:
-		m2.Payload().SetChange(m.Payload().Change())
-	}
-
-	return n, m2
-}
-
 func (mp *MessagePasser) passMessage(m message.Message, run hash.Hash) {
 
-	n, _ := mp.AppendAuthMessage(m, run)
+	n := message.AppendAuthMessage(m, run, mp.node.Key)
 
 	seen := make(map[string]bool)
 
