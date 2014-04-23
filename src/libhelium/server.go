@@ -9,7 +9,7 @@ import (
 )
 
 type LedgerSource interface {
-	GetLedger() *libhydrogen.Ledger
+	WaitNewLedger() *libhydrogen.Ledger
 }
 
 type Server struct {
@@ -34,7 +34,8 @@ func (s *Server) eventloop() {
 
 func (s *Server) dumpLedger(n *libnode.NeighborNode) {
 	util.Debugf("Recieved Request")
-	l := s.ledgerSource.GetLedger()
+	util.Debugf("Waiting for new ledger")
+	l := s.ledgerSource.WaitNewLedger()
 
 	util.Debugf("Encoding Ledger")
 	b := capnp.NewBuffer(nil)

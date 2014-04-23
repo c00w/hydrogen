@@ -15,7 +15,6 @@ import (
 type Handler interface {
 	message.Verifier
 	Handle(m message.Message)
-	RegisterBus(mp *messagePasser)
 }
 
 type messagePasser struct {
@@ -36,10 +35,8 @@ func newMessagePasser(n *libnode.Node, h Handler) *messagePasser {
 	go mp.handleConns()
 	go mp.handleMessages()
 	n.AddListener("hydrogen", mp.newNeighbor)
-	h.RegisterBus(mp)
 
 	return mp
-
 }
 
 func (mp *messagePasser) handleConns() {

@@ -29,27 +29,32 @@ type Hydrogen struct {
 	newblock chan []message.Vote
 
 	lock *sync.RWMutex
+
+	newledger *sync.Cond
 }
 
-func NewHydrogen(n *libnode.Node, l *Ledger, b *BlockTimer) *Hydrogen {
-	return newHydrogen(n, l, b, nil)
+func NewHydrogen(n *libnode.Node) *Hydrogen {
+	return newHydrogen(n, nil)
 }
 
-func newHydrogen(n *libnode.Node, l *Ledger, b *BlockTimer, c chan []message.Vote) *Hydrogen {
-	h := &Hydrogen{l, nil, make(chan message.Vote), make(map[string]time.Time),
-		nil, make(chan message.Change), b, nil, c, &sync.RWMutex{}}
-	newMessagePasser(n, h)
+func newHydrogen(n *libnode.Node, c chan []message.Vote) *Hydrogen {
+	h := &Hydrogen{}
+	h.newvote = make(chan message.Vote)
+	h.votetiming = make(map[string]time.Time)
+	h.newchange = make(chan message.Change)
+	h.mp = newMessagePasser(n, h)
+	h.newblock = c
+	h.lock = &sync.RWMutex{}
+	h.newledger = sync.NewCond(h.lock)
 	return h
-}
-
-func (h *Hydrogen) RegisterBus(mp *messagePasser) {
-	h.mp = mp
-	go h.eventloop()
 }
 
 func (h *Hydrogen) Verify(ks message.Authorization, hash []byte) error {
 	h.lock.RLock()
 	defer h.lock.RUnlock()
+	if h.currentledger == nil {
+		return nil
+	}
 	return h.currentledger.Verify(ks, hash)
 }
 
@@ -78,6 +83,24 @@ func (h *Hydrogen) GetBalance(account string) (uint64, error) {
 		return 0, errors.New("no such account")
 	}
 	return entry.Balance, nil
+}
+
+func (h *Hydrogen) WaitNewLedger() *Ledger {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	h.newledger.Wait()
+	return h.currentledger
+}
+
+func (h *Hydrogen) AddLedger(l *Ledger) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	if h.currentledger != nil {
+		panic("Add ledger called twice...")
+	}
+	h.currentledger = l
+	h.blocktimer = NewBlockTimer(l.Tau, l.Created)
+	go h.eventloop()
 }
 
 func (h *Hydrogen) GetLedger() *Ledger {
@@ -199,6 +222,7 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 	}
 
 	h.currentledger = ledger
+	h.newledger.Broadcast()
 
 	return appliedchanges, appliedvotes
 }

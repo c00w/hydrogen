@@ -2,7 +2,6 @@ package libhydrogen
 
 import (
 	"testing"
-	"time"
 
 	"libhydrogen/message"
 	"libnode"
@@ -20,16 +19,14 @@ func TestHydrogen(t *testing.T) {
 	l.AddEntry(util.KeyString(key1), "location1", 100)
 	l.AddEntry(util.KeyString(key2), "location2", 100)
 
-	now := time.Now()
-
-	b1 := NewBlockTimer(time.Second, now)
-	b2 := NewBlockTimer(time.Second, now)
-
 	tc1 := make(chan []message.Vote)
 	tc2 := make(chan []message.Vote)
 
-	h1 := newHydrogen(n1, l, b1, tc1)
-	h2 := newHydrogen(n2, l, b2, tc2)
+	h1 := newHydrogen(n1, tc1)
+	h2 := newHydrogen(n2, tc2)
+
+	h1.AddLedger(l)
+	h2.AddLedger(l)
 
 	n1.Listen("localhost:4005")
 	n2.Connect("localhost:4005", "hydrogen")

@@ -12,7 +12,7 @@ type DummyLedger struct {
 	*libhydrogen.Ledger
 }
 
-func (d DummyLedger) GetLedger() *libhydrogen.Ledger {
+func (d DummyLedger) WaitNewLedger() *libhydrogen.Ledger {
 	return d.Ledger
 }
 
