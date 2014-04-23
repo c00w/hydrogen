@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"libhydrogen/message"
+	"libnode"
 	"util"
 )
 
@@ -23,23 +24,25 @@ type Hydrogen struct {
 
 	blocktimer *BlockTimer
 
-	mp *MessagePasser
+	mp *messagePasser
 
 	newblock chan []message.Vote
 
 	lock *sync.RWMutex
 }
 
-func NewHydrogen(l *Ledger, b *BlockTimer) *Hydrogen {
-	return newHydrogen(l, b, nil)
+func NewHydrogen(n *libnode.Node, l *Ledger, b *BlockTimer) *Hydrogen {
+	return newHydrogen(n, l, b, nil)
 }
 
-func newHydrogen(l *Ledger, b *BlockTimer, c chan []message.Vote) *Hydrogen {
-	return &Hydrogen{l, nil, make(chan message.Vote), make(map[string]time.Time),
+func newHydrogen(n *libnode.Node, l *Ledger, b *BlockTimer, c chan []message.Vote) *Hydrogen {
+	h := &Hydrogen{l, nil, make(chan message.Vote), make(map[string]time.Time),
 		nil, make(chan message.Change), b, nil, c, &sync.RWMutex{}}
+	newMessagePasser(n, h)
+	return h
 }
 
-func (h *Hydrogen) RegisterBus(mp *MessagePasser) {
+func (h *Hydrogen) RegisterBus(mp *messagePasser) {
 	h.mp = mp
 	go h.eventloop()
 }

@@ -16,7 +16,7 @@ type nullhandler struct {
 }
 
 func (n nullhandler) Handle(m message.Message)      {}
-func (n nullhandler) RegisterBus(mp *MessagePasser) {}
+func (n nullhandler) RegisterBus(mp *messagePasser) {}
 
 type channelhandler struct {
 	*Ledger
@@ -24,7 +24,7 @@ type channelhandler struct {
 }
 
 func (c channelhandler) Handle(m message.Message)      { c.c <- m }
-func (n channelhandler) RegisterBus(mp *MessagePasser) {}
+func (n channelhandler) RegisterBus(mp *messagePasser) {}
 
 func TestMessageManipulation(t *testing.T) {
 	key1 := util.GenKey()
@@ -84,9 +84,9 @@ func TestMessagePassing(t *testing.T) {
 
 	tc := make(chan message.Message)
 
-	h1 := NewMessagePasser(n1, nullhandler{l})
-	NewMessagePasser(n2, nullhandler{l})
-	NewMessagePasser(n3, channelhandler{l, tc})
+	h1 := newMessagePasser(n1, nullhandler{l})
+	newMessagePasser(n2, nullhandler{l})
+	newMessagePasser(n3, channelhandler{l, tc})
 
 	n1.Listen("127.0.0.1:3001")
 	n2.Listen("127.0.0.1:3002")

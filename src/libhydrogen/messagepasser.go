@@ -15,18 +15,18 @@ import (
 type Handler interface {
 	message.Verifier
 	Handle(m message.Message)
-	RegisterBus(mp *MessagePasser)
+	RegisterBus(mp *messagePasser)
 }
 
-type MessagePasser struct {
+type messagePasser struct {
 	node        *libnode.Node
 	handler     Handler
 	newNeighbor chan *libnode.NeighborNode
 	newMessage  chan message.Message
 }
 
-func NewMessagePasser(n *libnode.Node, h Handler) *MessagePasser {
-	mp := &MessagePasser{
+func newMessagePasser(n *libnode.Node, h Handler) *messagePasser {
+	mp := &messagePasser{
 		n,
 		h,
 		make(chan *libnode.NeighborNode),
@@ -42,13 +42,13 @@ func NewMessagePasser(n *libnode.Node, h Handler) *MessagePasser {
 
 }
 
-func (mp *MessagePasser) handleConns() {
+func (mp *messagePasser) handleConns() {
 	for c := range mp.newNeighbor {
 		go mp.handleConn(c)
 	}
 }
 
-func (mp *MessagePasser) handleConn(c *libnode.NeighborNode) {
+func (mp *messagePasser) handleConn(c *libnode.NeighborNode) {
 	var seg *capnp.Segment
 	var err error
 
@@ -69,30 +69,30 @@ func (mp *MessagePasser) handleConn(c *libnode.NeighborNode) {
 	}
 }
 
-func (mp *MessagePasser) handleMessages() {
+func (mp *messagePasser) handleMessages() {
 	for m := range mp.newMessage {
 		mp.handler.Handle(m)
 	}
 }
 
-func (mp *MessagePasser) SendChange(c message.Change) {
+func (mp *messagePasser) SendChange(c message.Change) {
 	n := message.CreateMessageFromChange(c, mp.node.Key)
 	mp.sendMessage(n)
 }
 
-func (mp *MessagePasser) SendVote(v message.Vote) {
+func (mp *messagePasser) SendVote(v message.Vote) {
 	n := message.CreateMessageFromVote(v, mp.node.Key)
 	mp.sendMessage(n)
 }
 
-func (mp *MessagePasser) sendMessage(n *capnp.Segment) {
+func (mp *messagePasser) sendMessage(n *capnp.Segment) {
 	for _, name := range mp.node.ListNeighbors() {
 		n.WriteTo(mp.node.GetNeighbor(name))
 	}
 	mp.newMessage <- message.ReadRootMessage(n)
 }
 
-func (mp *MessagePasser) passMessage(m message.Message, run hash.Hash) {
+func (mp *messagePasser) passMessage(m message.Message, run hash.Hash) {
 
 	n := message.AppendAuthMessage(m, run, mp.node.Key)
 

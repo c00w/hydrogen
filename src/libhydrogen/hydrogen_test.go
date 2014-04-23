@@ -28,11 +28,8 @@ func TestHydrogen(t *testing.T) {
 	tc1 := make(chan []message.Vote)
 	tc2 := make(chan []message.Vote)
 
-	h1 := newHydrogen(l, b1, tc1)
-	h2 := newHydrogen(l, b2, tc2)
-
-	NewMessagePasser(n1, h1)
-	NewMessagePasser(n2, h2)
+	h1 := newHydrogen(n1, l, b1, tc1)
+	h2 := newHydrogen(n2, l, b2, tc2)
 
 	n1.Listen("localhost:4005")
 	n2.Connect("localhost:4005", "hydrogen")
