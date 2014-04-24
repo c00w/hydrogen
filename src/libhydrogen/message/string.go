@@ -49,6 +49,8 @@ func (t ChangeType) String() string {
 	switch t.Which() {
 	case CHANGETYPE_TRANSACTION:
 		return fmt.Sprintf("%v", t.Transaction())
+	case CHANGETYPE_TIME:
+		return fmt.Sprintf("%v", t.Time())
 	default:
 		return fmt.Sprintf("UNKNOWN")
 	}
@@ -56,4 +58,8 @@ func (t ChangeType) String() string {
 
 func (t TransactionChange) String() string {
 	return fmt.Sprintf("Transfer{%s..., %s..., %d}", shortb(t.Source()), shortb(t.Destination()), t.Amount())
+}
+
+func (r RateChange) String() string {
+	return fmt.Sprintf("RateChange{%s}", r.Vote())
 }

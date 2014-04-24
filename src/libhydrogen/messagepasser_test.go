@@ -111,4 +111,10 @@ func TestMessagePassing(t *testing.T) {
 		t.Errorf("Authchain incorrect length, %d != 2", m.AuthChain().Len())
 		t.Errorf("Message was %v", m)
 	}
+
+	select {
+	case <-tc:
+		t.Errorf("Recieved extra message???")
+	default:
+	}
 }
