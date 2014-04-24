@@ -103,20 +103,21 @@ func (l *Ledger) Apply(c message.Change) error {
 		info.Location = ""
 		l.Accounts[account] = info
 
-	case message.CHANGETYPE_TIME:
-		switch c.Type().Time().Vote() {
-		case message.RATEVOTE_INCREASE:
-			l.Tau = l.Tau * 11 / 10
-		case message.RATEVOTE_DECREASE:
-			l.Tau = l.Tau * 10 / 11
-		default:
-		}
-
 	default:
 		return errors.New("unrecognized change type")
 	}
 
 	return nil
+}
+
+func (l *Ledger) ApplyRate(r message.RateVote) {
+	switch r {
+	case message.RATEVOTE_INCREASE:
+		l.Tau = l.Tau * 11 / 10
+	case message.RATEVOTE_DECREASE:
+		l.Tau = l.Tau * 10 / 11
+	default:
+	}
 }
 
 func (l *Ledger) HostCount() uint {

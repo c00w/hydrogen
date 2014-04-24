@@ -47,10 +47,6 @@ enum RateVote {
     decrease @2;
 }
 
-struct RateChange {
-    vote @0: RateVote;
-}
-
 struct Change {
 
     authorization @0: Authorization;
@@ -60,15 +56,14 @@ struct Change {
          transaction @2 :TransactionChange;
          location @3 :LocationChange;
          drop @4: DropChange;
-         time @5: RateChange;
-
     }
 }
 
 struct Vote {
     votes @0: List(Change);
-    time @1: Time;
-    authorization @2: Authorization;
+    rate @1: RateVote;
+    time @2: Time;
+    authorization @3: Authorization;
 }
 
 struct Message {

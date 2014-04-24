@@ -9,25 +9,7 @@ import (
 	capnp "github.com/glycerine/go-capnproto"
 )
 
-func NewSignedRateChange(r RateVote, k *ecdsa.PrivateKey) Change {
-
-	n := capnp.NewBuffer(nil)
-
-	c := NewRootChange(n)
-	c.SetCreated(util.NewTimeNow(n))
-
-	rc := NewRateChange(n)
-	rc.SetVote(r)
-
-	c.Type().SetTime(rc)
-
-	h := util.Hash(c.Created(), c.Type().Time())
-
-	c.SetAuthorization(NewSignedAuthorization(n, k, []byte(h)))
-	return c
-}
-
-func NewSignedVote(c []Change, key *ecdsa.PrivateKey) Vote {
+func NewSignedVote(c []Change, r RateVote, key *ecdsa.PrivateKey) Vote {
 	ns := capnp.NewBuffer(nil)
 
 	v := NewRootVote(ns)
@@ -37,8 +19,9 @@ func NewSignedVote(c []Change, key *ecdsa.PrivateKey) Vote {
 	}
 	v.SetVotes(cl)
 	v.SetTime(util.NewTimeNow(ns))
+	v.SetRate(r)
 
-	h := util.Hash(v.Votes(), v.Time())
+	h := util.Hash(v.Votes(), v.Rate(), v.Time())
 
 	a := NewSignedAuthorization(ns, key, []byte(h))
 	v.SetAuthorization(a)

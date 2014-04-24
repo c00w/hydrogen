@@ -38,8 +38,6 @@ func (c Change) Hash(h hash.Hash) {
 		c.Type().Location().Hash(h)
 	case CHANGETYPE_DROP:
 		c.Type().Drop().Hash(h)
-	case CHANGETYPE_TIME:
-		c.Type().Time().Hash(h)
 	default:
 	}
 }
@@ -59,8 +57,8 @@ func (d DropChange) Hash(h hash.Hash) {
 	h.Write(d.Account())
 }
 
-func (r RateChange) Hash(h hash.Hash) {
-	h.Write(util.UInt16ToBA(uint16(r.Vote())))
+func (r RateVote) Hash(h hash.Hash) {
+	h.Write(util.UInt16ToBA(uint16(r)))
 }
 
 func (k Key) Hash(h hash.Hash) {

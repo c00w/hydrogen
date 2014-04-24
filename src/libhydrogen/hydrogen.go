@@ -129,20 +129,18 @@ func (h *Hydrogen) eventloop() {
 		bt := <-h.blocktimer.Chan()
 		h.lock.Lock()
 
-		ratechange := h.calculateRateChange()
-
 		appliedchanges, appliedvotes := h.applyVotes(bt)
 
 		h.blocktimer.SetTau(h.currentledger.Tau)
 
 		h.cleanupChanges(appliedchanges)
-		h.cleanupVotes(bt)
 
 		if h.caughtup(bt) {
-			h.changes = append(h.changes, ratechange)
-			vote := message.NewSignedVote(h.changes, h.mp.node.Key)
+			vote := message.NewSignedVote(h.changes, h.calculateRateChange(), h.mp.node.Key)
 			go h.mp.SendVote(vote)
 		}
+
+		h.cleanupVotes(bt)
 
 		h.lock.Unlock()
 
@@ -152,7 +150,7 @@ func (h *Hydrogen) eventloop() {
 	}
 }
 
-func (h *Hydrogen) calculateRateChange() message.Change {
+func (h *Hydrogen) calculateRateChange() message.RateVote {
 	times := make([]time.Time, 0, len(h.votetiming))
 
 	for _, t := range h.votetiming {
@@ -164,7 +162,7 @@ func (h *Hydrogen) calculateRateChange() message.Change {
 	sort.Sort(earliest(times))
 
 	if len(times) == 0 {
-		return message.NewSignedRateChange(message.RATEVOTE_CONSTANT, h.mp.node.Key)
+		return message.RATEVOTE_CONSTANT
 	}
 
 	median := times[len(times)/2]
@@ -172,14 +170,14 @@ func (h *Hydrogen) calculateRateChange() message.Change {
 	estimatedtau := median.Sub(h.currentledger.Created)
 
 	if estimatedtau > h.currentledger.Tau/2 {
-		return message.NewSignedRateChange(message.RATEVOTE_INCREASE, h.mp.node.Key)
+		return message.RATEVOTE_INCREASE
 	}
 
 	if estimatedtau < h.currentledger.Tau/4 {
-		return message.NewSignedRateChange(message.RATEVOTE_DECREASE, h.mp.node.Key)
+		return message.RATEVOTE_DECREASE
 	}
 
-	return message.NewSignedRateChange(message.RATEVOTE_CONSTANT, h.mp.node.Key)
+	return message.RATEVOTE_CONSTANT
 }
 
 func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
@@ -194,7 +192,16 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 		}
 	}
 
+	faster := uint(0)
+	slower := uint(0)
+
 	for _, v := range appliedvotes {
+		switch v.Rate() {
+		case message.RATEVOTE_INCREASE:
+			faster += 1
+		case message.RATEVOTE_DECREASE:
+			slower += 1
+		}
 		for _, c := range v.Votes().ToArray() {
 			id := util.Hash(c)
 			if _, ok := changes[id]; !ok {
@@ -213,6 +220,14 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 	}
 
 	ledger := h.currentledger.Copy(t.End)
+
+	if faster > h.currentledger.HostCount()/2 {
+		ledger.ApplyRate(message.RATEVOTE_INCREASE)
+	}
+
+	if slower > h.currentledger.HostCount()/2 {
+		ledger.ApplyRate(message.RATEVOTE_DECREASE)
+	}
 
 	sort.Sort(timesort(appliedchanges))
 	for _, change := range appliedchanges {
