@@ -24,14 +24,14 @@ func TestNode(t *testing.T) {
 	<-N2c
 	<-N1c
 
-	ns := N2.ListNeighbors()
+	ns := N2.listNeighbors()
 	if len(ns) != 1 {
 		t.Fatalf("Expected 1 Neighbor got %s", ns)
 	}
 
-	N2.GetNeighbor(util.KeyString(priv)).Write([]byte("Foo"))
+	N2.getNeighbor(util.KeyString(priv), "hydrogen").Write([]byte("Foo"))
 	b := make([]byte, 4)
-	io.ReadAtLeast(N1.GetNeighbor(util.KeyString(priv2)), b, 1)
+	io.ReadAtLeast(N1.getNeighbor(util.KeyString(priv2), "hydrogen"), b, 1)
 
 	if b[0] != 'F' {
 		t.Fatal("Expected leading F got %s", b)

@@ -43,7 +43,7 @@ func (b *BlockTimer) SetTau(tau time.Duration) {
 
 func (b *BlockTimer) setupTimer() {
 	if b.lasttime.Add(b.tau).Before(time.Now()) {
-		b.timerFired()
+		go b.timerFired()
 		return
 	}
 	wait := time.Duration(b.tau.Nanoseconds() - (time.Now().Sub(b.lasttime).Nanoseconds()))

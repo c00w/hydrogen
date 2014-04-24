@@ -13,7 +13,7 @@ type Node struct {
 	Location string
 
 	lock      *sync.RWMutex
-	neighbors map[string]*NeighborNode
+	neighbors map[string]map[string]*NeighborNode
 	listeners map[string]chan *NeighborNode
 }
 
@@ -22,7 +22,7 @@ func NewNode(Key *ecdsa.PrivateKey, Location string) *Node {
 		Key,
 		Location,
 		&sync.RWMutex{},
-		make(map[string]*NeighborNode),
+		make(map[string]map[string]*NeighborNode),
 		make(map[string]chan *NeighborNode),
 	}
 	return n
@@ -50,7 +50,10 @@ func (n *Node) handleConn(c *tls.Conn) {
 	N := NewNeighborNode(c)
 	n.lock.Lock()
 	defer n.lock.Unlock()
-	n.neighbors[N.Account()] = N
+	if _, ok := n.neighbors[N.Protocol]; !ok {
+		n.neighbors[N.Protocol] = make(map[string]*NeighborNode)
+	}
+	n.neighbors[N.Protocol][N.Account()] = N
 	o, ok := n.listeners[N.Protocol]
 	if ok {
 		o <- N
@@ -65,18 +68,20 @@ func (n *Node) protocols() []string {
 	return l
 }
 
-func (n *Node) GetNeighbor(account string) *NeighborNode {
+func (n *Node) getNeighbor(account string, protocol string) *NeighborNode {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
-	return n.neighbors[account]
+	return n.neighbors[protocol][account]
 }
 
-func (n *Node) ListNeighbors() []string {
+func (n *Node) listNeighbors() []string {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
 	nl := make([]string, 0, len(n.neighbors))
-	for k, _ := range n.neighbors {
-		nl = append(nl, k)
+	for p, _ := range n.neighbors {
+		for k, _ := range n.neighbors[p] {
+			nl = append(nl, k)
+		}
 	}
 	return nl
 }
@@ -85,9 +90,7 @@ func (n *Node) AddListener(protocol string, c chan *NeighborNode) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	n.listeners[protocol] = c
-	for _, N := range n.neighbors {
-		if N.Protocol == protocol {
-			c <- N
-		}
+	for _, N := range n.neighbors[protocol] {
+		c <- N
 	}
 }

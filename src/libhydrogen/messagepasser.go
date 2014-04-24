@@ -22,6 +22,7 @@ type messagePasser struct {
 	handler     Handler
 	newNeighbor chan *libnode.NeighborNode
 	newMessage  chan message.Message
+	neighbors   map[string]*libnode.NeighborNode
 }
 
 func newMessagePasser(n *libnode.Node, h Handler) *messagePasser {
@@ -30,6 +31,7 @@ func newMessagePasser(n *libnode.Node, h Handler) *messagePasser {
 		h,
 		make(chan *libnode.NeighborNode),
 		make(chan message.Message),
+		make(map[string]*libnode.NeighborNode),
 	}
 
 	go mp.handleConns()
@@ -41,6 +43,7 @@ func newMessagePasser(n *libnode.Node, h Handler) *messagePasser {
 
 func (mp *messagePasser) handleConns() {
 	for c := range mp.newNeighbor {
+		mp.neighbors[c.Account()] = c
 		go mp.handleConn(c)
 	}
 }
@@ -51,6 +54,7 @@ func (mp *messagePasser) handleConn(c *libnode.NeighborNode) {
 
 	for {
 		seg, err = capnp.ReadFromStream(c, nil)
+		util.Debugf("Host %s, Message recieved", util.Short(util.KeyString(mp.node.Key)))
 		if err != nil {
 			panic(err)
 		}
@@ -83,8 +87,8 @@ func (mp *messagePasser) SendVote(v message.Vote) {
 }
 
 func (mp *messagePasser) sendMessage(n *capnp.Segment) {
-	for _, name := range mp.node.ListNeighbors() {
-		n.WriteTo(mp.node.GetNeighbor(name))
+	for _, neighbor := range mp.neighbors {
+		n.WriteTo(neighbor)
 	}
 	mp.newMessage <- message.ReadRootMessage(n)
 }
@@ -101,10 +105,10 @@ func (mp *messagePasser) passMessage(m message.Message, run hash.Hash) {
 		seen[a.Account()] = true
 	}
 
-	for _, name := range mp.node.ListNeighbors() {
+	for name, neighbor := range mp.neighbors {
 		if !seen[name] {
 			util.Debugf("Host %v not seen, sending message", util.Short(name))
-			n.WriteTo(mp.node.GetNeighbor(name))
+			n.WriteTo(neighbor)
 		}
 	}
 }

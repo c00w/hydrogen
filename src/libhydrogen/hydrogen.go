@@ -58,6 +58,10 @@ func (h *Hydrogen) Verify(ks message.Authorization, hash []byte) error {
 	return h.currentledger.Verify(ks, hash)
 }
 
+func (h *Hydrogen) shost() string {
+	return util.Short(util.KeyString(h.mp.node.Key))
+}
+
 func (h *Hydrogen) Handle(m message.Message) {
 	switch m.Payload().Which() {
 	case message.MESSAGEPAYLOAD_VOTE:
@@ -100,6 +104,11 @@ func (h *Hydrogen) AddLedger(l *Ledger) {
 	}
 	h.currentledger = l
 	h.blocktimer = NewBlockTimer(l.Tau, l.Created)
+
+	t := TimeRange{l.Created.Add(-l.Tau), l.Created}
+
+	h.cleanupVotes(t)
+
 	go h.eventloop()
 }
 
@@ -111,7 +120,7 @@ func (h *Hydrogen) GetLedger() *Ledger {
 
 func (h *Hydrogen) handleVote(v message.Vote) {
 	h.lock.Lock()
-	util.Debugf("vote recieved %v", v)
+	util.Debugf("Host %s, vote recieved %v", h.shost(), v)
 	h.votes = append(h.votes, v)
 	h.votetiming[util.Hash(v)] = time.Now()
 	h.lock.Unlock()
@@ -125,6 +134,7 @@ func (h *Hydrogen) handleChange(c message.Change) {
 }
 
 func (h *Hydrogen) eventloop() {
+	util.Debugf("Host %s starting eventloop", h.shost())
 	for {
 		bt := <-h.blocktimer.Chan()
 		h.lock.Lock()
@@ -136,8 +146,11 @@ func (h *Hydrogen) eventloop() {
 		h.cleanupChanges(appliedchanges)
 
 		if h.caughtup(bt) {
+			util.Debugf("Host %s Generating vote", h.shost())
 			vote := message.NewSignedVote(h.changes, h.calculateRateChange(), h.mp.node.Key)
 			go h.mp.SendVote(vote)
+		} else {
+			util.Debugf("Not caughtup fastforwarding")
 		}
 
 		h.cleanupVotes(bt)
@@ -161,7 +174,7 @@ func (h *Hydrogen) calculateRateChange() message.RateVote {
 
 	sort.Sort(earliest(times))
 
-	if len(times) == 0 {
+	if len(times) == 0 || len(times) == 1 {
 		return message.RATEVOTE_CONSTANT
 	}
 
