@@ -138,12 +138,13 @@ func (h *Hydrogen) eventloop() {
 		h.cleanupChanges(appliedchanges)
 		h.cleanupVotes(bt)
 
-		h.changes = append(h.changes, ratechange)
+		if h.caughtup(bt) {
+			h.changes = append(h.changes, ratechange)
+			vote := message.NewSignedVote(h.changes, h.mp.node.Key)
+			go h.mp.SendVote(vote)
+		}
 
-		vote := message.NewSignedVote(h.changes, h.mp.node.Key)
 		h.lock.Unlock()
-
-		h.mp.SendVote(vote)
 
 		if h.newblock != nil {
 			h.newblock <- appliedvotes
@@ -271,4 +272,8 @@ func (h *Hydrogen) cleanupVotes(t TimeRange) {
 	}
 
 	h.votes = votes
+}
+
+func (h *Hydrogen) caughtup(t TimeRange) bool {
+	return t.End.Add(h.currentledger.Tau).After(time.Now())
 }
