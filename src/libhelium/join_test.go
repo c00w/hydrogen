@@ -30,12 +30,19 @@ func TestJoin(t *testing.T) {
 	n2.Connect("localhost:4010", "hydrogen")
 
 	h1.WaitNewLedger()
-	h1.WaitNewLedger()
 
 	nl := Connect(n2, "localhost:4010")
 
 	h2.AddLedger(nl)
 	h2.WaitNewLedger()
-	h2.WaitNewLedger()
+	h2.SetLocation("testlocation")
+	h1.WaitNewLedger()
+	location, err := h1.GetLocation(util.KeyString(key2))
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	if location != "testlocation" {
+		t.Fatalf("Testlocation is %s != testlocation", location)
+	}
 }

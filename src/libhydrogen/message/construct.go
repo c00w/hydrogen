@@ -47,6 +47,24 @@ func NewSignedTransaction(key *ecdsa.PrivateKey, destination string, amount uint
 	return c
 }
 
+func NewSignedLocationUpdate(key *ecdsa.PrivateKey, newlocation string) Change {
+	n := capnp.NewBuffer(nil)
+
+	c := NewRootChange(n)
+	c.SetCreated(util.NewTimeNow(n))
+
+	u := NewLocationChange(n)
+	u.SetLocation(newlocation)
+	u.SetAccount([]byte(util.KeyString(key)))
+
+	c.Type().SetLocation(u)
+
+	h := util.Hash(c.Created(), c.Type().Location())
+	auth := NewSignedAuthorization(n, key, []byte(h))
+	c.SetAuthorization(auth)
+	return c
+}
+
 func CreateMessageFromChange(c Change, key *ecdsa.PrivateKey) *capnp.Segment {
 	n := capnp.NewBuffer(nil)
 

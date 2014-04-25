@@ -41,7 +41,7 @@ func (l *Ledger) AddEntry(key string, location string, balance uint64) {
 	l.Accounts[key] = &Account{key, location, balance}
 }
 
-func (l *Ledger) Apply(c message.Change) error {
+func (l *Ledger) Apply(c message.Change, votesseen map[string]bool) error {
 
 	switch c.Type().Which() {
 	case message.CHANGETYPE_TRANSACTION:
@@ -88,6 +88,10 @@ func (l *Ledger) Apply(c message.Change) error {
 		account, ok := l.Accounts[string(lo.Account())]
 		if !ok {
 			return errors.New("no such account")
+		}
+
+		if votesseen != nil && !votesseen[string(lo.Account())] {
+			return errors.New("account is not active")
 		}
 
 		account.Location = lo.Location()

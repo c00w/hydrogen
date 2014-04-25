@@ -79,6 +79,12 @@ func (h *Hydrogen) TransferMoney(destination string, amount uint64) error {
 	return nil
 }
 
+func (h *Hydrogen) SetLocation(newlocation string) error {
+	u := message.NewSignedLocationUpdate(h.mp.node.Key, newlocation)
+	h.mp.SendChange(u)
+	return nil
+}
+
 func (h *Hydrogen) GetBalance(account string) (uint64, error) {
 	h.lock.RLock()
 	entry, ok := h.currentledger.Accounts[account]
@@ -87,6 +93,16 @@ func (h *Hydrogen) GetBalance(account string) (uint64, error) {
 		return 0, errors.New("no such account")
 	}
 	return entry.Balance, nil
+}
+
+func (h *Hydrogen) GetLocation(account string) (string, error) {
+	h.lock.RLock()
+	entry, ok := h.currentledger.Accounts[account]
+	h.lock.RUnlock()
+	if !ok {
+		return "", errors.New("no such account")
+	}
+	return entry.Location, nil
 }
 
 func (h *Hydrogen) WaitNewLedger() *Ledger {
@@ -199,9 +215,11 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 	changecount := make(map[string]uint)
 
 	appliedvotes := make([]message.Vote, 0)
+	votesseen := make(map[string]bool)
 	for _, v := range h.votes {
 		if v.Time().Time().After(t.Start) && v.Time().Time().Before(t.End) {
 			appliedvotes = append(appliedvotes, v)
+			votesseen[v.Authorization().Account()] = true
 		}
 	}
 
@@ -244,7 +262,7 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 
 	sort.Sort(timesort(appliedchanges))
 	for _, change := range appliedchanges {
-		err := ledger.Apply(change)
+		err := ledger.Apply(change, votesseen)
 		if err != nil {
 			panic(err)
 		}
@@ -281,7 +299,7 @@ func (h *Hydrogen) cleanupChanges(applied []message.Change) {
 	changeledger := h.currentledger.Copy(time.Now())
 
 	for _, change := range h.changes {
-		err := changeledger.Apply(change)
+		err := changeledger.Apply(change, nil)
 		if err == nil {
 			changes = append(changes, change)
 		}
