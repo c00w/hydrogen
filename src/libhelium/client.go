@@ -10,7 +10,7 @@ import (
 	capnp "github.com/glycerine/go-capnproto"
 )
 
-func Connect(n *libnode.Node, address string) *libhydrogen.Ledger {
+func Connect(n *libnode.Node, address string) (*libhydrogen.Ledger, error) {
 	tc := make(chan *libnode.NeighborNode)
 	n.AddListener("helium", tc)
 	go n.Connect(address, "helium")
@@ -19,7 +19,7 @@ func Connect(n *libnode.Node, address string) *libhydrogen.Ledger {
 
 	ns, err := capnp.ReadFromStream(s, nil)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	util.Debugf("Segment Recieved")
 
@@ -31,5 +31,5 @@ func Connect(n *libnode.Node, address string) *libhydrogen.Ledger {
 		l.AddEntry(string(v.Key()), v.Location(), v.Balance())
 	}
 
-	return l
+	return l, nil
 }

@@ -9,3 +9,9 @@ struct Time {
     seconds @0: UInt64;
     nanoSeconds @1: UInt32;
 }
+
+struct P521Key {
+    d @0: Data;
+    x @1: Data;
+    y @2: Data;
+}

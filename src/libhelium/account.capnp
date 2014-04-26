@@ -2,7 +2,7 @@ using Go = import "../github.com/glycerine/go-capnproto/go.capnp";
 $Go.package("libhelium");
 $Go.import("libhelium");
 
-using import "../util/time.capnp".Time;
+using import "../util/util.capnp".Time;
 
 @0xaec058e4daabb567;
 

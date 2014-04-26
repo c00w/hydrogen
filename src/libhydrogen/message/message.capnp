@@ -3,7 +3,7 @@ using Go = import "../../github.com/glycerine/go-capnproto/go.capnp";
 $Go.package("message");
 $Go.import("message");
 
-using import "../../util/time.capnp".Time;
+using import "../../util/util.capnp".Time;
 
 @0xf5151606f45c93ef;
 
