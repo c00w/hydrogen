@@ -31,7 +31,10 @@ func TestDownload(t *testing.T) {
 
 	NewServer(n1, ls)
 
-	lr := Connect(n2, "127.0.0.1:3010")
+	lr, err := Connect(n2, "127.0.0.1:3010")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(lr.Accounts) != 1 {
 		t.Fatalf("Account length incorrect, %v", lr.Accounts)
 	}

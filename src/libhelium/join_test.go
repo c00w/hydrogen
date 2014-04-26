@@ -31,7 +31,10 @@ func TestJoin(t *testing.T) {
 
 	h1.WaitNewLedger()
 
-	nl := Connect(n2, "localhost:4010")
+	nl, err := Connect(n2, "localhost:4010")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	h2.AddLedger(nl)
 	h2.WaitNewLedger()
