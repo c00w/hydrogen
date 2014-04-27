@@ -97,16 +97,6 @@ func (l *Ledger) Apply(c message.Change, votesseen map[string]bool) error {
 		account.Location = lo.Location()
 		l.Accounts[account.Key] = account
 
-	case message.CHANGETYPE_DROP:
-		d := c.Type().Drop()
-		account := string(d.Account())
-		info, ok := l.Accounts[account]
-		if !ok {
-			return errors.New("no such account")
-		}
-		info.Location = ""
-		l.Accounts[account] = info
-
 	default:
 		return errors.New("unrecognized change type")
 	}
@@ -122,6 +112,16 @@ func (l *Ledger) ApplyRate(r message.RateVote) {
 		l.Tau = l.Tau * 10 / 11
 	default:
 	}
+}
+
+func (l *Ledger) Drop(n string) {
+	a, ok := l.Accounts[n]
+	if !ok {
+		return
+	}
+	a = a.Copy()
+	a.Location = ""
+	l.Accounts[n] = a
 }
 
 func (l *Ledger) HostCount() uint {

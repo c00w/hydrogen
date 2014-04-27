@@ -9,7 +9,7 @@ import (
 	capnp "github.com/glycerine/go-capnproto"
 )
 
-func NewSignedVote(c []Change, r RateVote, key *ecdsa.PrivateKey) Vote {
+func NewSignedVote(c []Change, r RateVote, d DropChange_List, key *ecdsa.PrivateKey) Vote {
 	ns := capnp.NewBuffer(nil)
 
 	v := NewRootVote(ns)
@@ -20,6 +20,7 @@ func NewSignedVote(c []Change, r RateVote, key *ecdsa.PrivateKey) Vote {
 	v.SetVotes(cl)
 	v.SetTime(util.NewTimeNow(ns))
 	v.SetRate(r)
+	v.SetDrop(d)
 
 	h := util.Hash(v.Votes(), v.Rate(), v.Time())
 
@@ -120,4 +121,16 @@ func AppendAuthMessage(m Message, run hash.Hash, key *ecdsa.PrivateKey) *capnp.S
 	}
 
 	return n
+}
+
+func NewDropVotes(hosts []string) DropChange_List {
+	b := capnp.NewBuffer(nil)
+
+	dl := NewDropChangeList(b, len(hosts))
+	for i, h := range hosts {
+		d := NewDropChange(b)
+		d.SetAccount([]byte(h))
+		capnp.PointerList(dl).Set(i, capnp.Object(d))
+	}
+	return dl
 }

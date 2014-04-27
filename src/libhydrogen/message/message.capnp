@@ -55,15 +55,15 @@ struct Change {
     type :union {
          transaction @2 :TransactionChange;
          location @3 :LocationChange;
-         drop @4: DropChange;
     }
 }
 
 struct Vote {
     votes @0: List(Change);
     rate @1: RateVote;
-    time @2: Time;
-    authorization @3: Authorization;
+    drop @2: List(DropChange);
+    time @3: Time;
+    authorization @4: Authorization;
 }
 
 struct Message {

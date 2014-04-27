@@ -24,6 +24,8 @@ func (c Change_List) Hash(h hash.Hash) {
 
 func (v Vote) Hash(h hash.Hash) {
 	v.Votes().Hash(h)
+	v.Rate().Hash(h)
+	v.Drop().Hash(h)
 	v.Time().Hash(h)
 	v.Authorization().Hash(h)
 }
@@ -36,8 +38,6 @@ func (c Change) Hash(h hash.Hash) {
 		c.Type().Transaction().Hash(h)
 	case CHANGETYPE_LOCATION:
 		c.Type().Location().Hash(h)
-	case CHANGETYPE_DROP:
-		c.Type().Drop().Hash(h)
 	default:
 	}
 }
@@ -51,6 +51,12 @@ func (t TransactionChange) Hash(h hash.Hash) {
 func (l LocationChange) Hash(h hash.Hash) {
 	h.Write(l.Account())
 	h.Write([]byte(l.Location()))
+}
+
+func (dl DropChange_List) Hash(h hash.Hash) {
+	for i := 0; i < dl.Len(); i++ {
+		dl.At(i).Hash(h)
+	}
 }
 
 func (d DropChange) Hash(h hash.Hash) {

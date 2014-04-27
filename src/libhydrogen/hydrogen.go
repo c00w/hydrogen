@@ -163,7 +163,11 @@ func (h *Hydrogen) eventloop() {
 
 		if h.caughtup(bt) {
 			util.Debugf("Host %s Generating vote", h.shost())
-			vote := message.NewSignedVote(h.changes, h.calculateRateChange(), h.mp.node.Key)
+			vote := message.NewSignedVote(
+				h.changes,
+				h.calculateRateChange(),
+				h.calculateDropVotes(),
+				h.mp.node.Key)
 			go h.mp.SendVote(vote)
 		} else {
 			util.Debugf("Not caughtup fastforwarding")
@@ -209,10 +213,30 @@ func (h *Hydrogen) calculateRateChange() message.RateVote {
 	return message.RATEVOTE_CONSTANT
 }
 
+func (h *Hydrogen) calculateDropVotes() message.DropChange_List {
+
+	absenthosts := make([]string, 0)
+
+	seen := make(map[string]bool)
+
+	for _, v := range h.votes {
+		seen[v.Authorization().Account()] = true
+	}
+
+	for host, _ := range h.currentledger.Accounts {
+		if !seen[host] {
+			absenthosts = append(absenthosts, host)
+		}
+	}
+
+	return message.NewDropVotes(absenthosts)
+}
+
 func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 
 	changes := make(map[string]message.Change)
 	changecount := make(map[string]uint)
+	drop := make(map[string]uint)
 
 	appliedvotes := make([]message.Vote, 0)
 	votesseen := make(map[string]bool)
@@ -232,6 +256,10 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 			faster += 1
 		case message.RATEVOTE_DECREASE:
 			slower += 1
+		}
+
+		for _, d := range v.Drop().ToArray() {
+			drop[string(d.Account())] += 1
 		}
 		for _, c := range v.Votes().ToArray() {
 			id := util.Hash(c)
@@ -265,6 +293,12 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 		err := ledger.Apply(change, votesseen)
 		if err != nil {
 			panic(err)
+		}
+	}
+
+	for account, c := range drop {
+		if c > h.currentledger.HostCount()/2 {
+			ledger.Drop(account)
 		}
 	}
 
