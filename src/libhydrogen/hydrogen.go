@@ -235,8 +235,8 @@ func (h *Hydrogen) calculateDropVotes() message.DropChange_List {
 func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 
 	changes := make(map[string]message.Change)
-	changecount := make(map[string]uint)
-	drop := make(map[string]uint)
+	changecount := make(map[string]uint64)
+	drop := make(map[string]uint64)
 
 	appliedvotes := make([]message.Vote, 0)
 	votesseen := make(map[string]bool)
@@ -247,8 +247,8 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 		}
 	}
 
-	faster := uint(0)
-	slower := uint(0)
+	faster := uint64(0)
+	slower := uint64(0)
 
 	for _, v := range appliedvotes {
 		switch v.Rate() {

@@ -10,6 +10,8 @@ import (
 	"util"
 )
 
+var ZEROACCOUNT string = util.Hash()
+
 type Ledger struct {
 	Accounts map[string]*Account
 	Tau      time.Duration
@@ -114,6 +116,54 @@ func (l *Ledger) ApplyRate(r message.RateVote) {
 	}
 }
 
+func calculateLoss(amount, period uint64) uint64 {
+	return (amount * period >> 47) + 1
+}
+
+func (l *Ledger) ApplyWealthRedistribution(period time.Duration) {
+
+	totaltaken := uint64(0)
+	hostcount := l.HostCount()
+
+	expected := uint64(1) << 63 / hostcount
+
+	for k, account := range l.Accounts {
+		allowed := uint64(0)
+		if account.Active() {
+			allowed = expected
+		}
+		if account.Balance > allowed {
+			loss := calculateLoss(account.Balance-allowed, uint64(period))
+			totaltaken += loss
+			account := account.Copy()
+			account.Balance -= loss
+			l.Accounts[k] = account
+		}
+	}
+
+	redistribution := totaltaken / hostcount
+
+	for k, account := range l.Accounts {
+		if account.Active() {
+			account = account.Copy()
+			account.Balance += redistribution
+			l.Accounts[k] = account
+		}
+	}
+
+	extra := totaltaken - redistribution*hostcount
+
+	c, ok := l.Accounts[ZEROACCOUNT]
+	if !ok {
+		c = &Account{ZEROACCOUNT, "", 0}
+	}
+
+	c = c.Copy()
+	c.Balance += extra
+	l.Accounts[ZEROACCOUNT] = c
+
+}
+
 func (l *Ledger) Drop(n string) {
 	a, ok := l.Accounts[n]
 	if !ok {
@@ -124,8 +174,8 @@ func (l *Ledger) Drop(n string) {
 	l.Accounts[n] = a
 }
 
-func (l *Ledger) HostCount() uint {
-	i := uint(0)
+func (l *Ledger) HostCount() uint64 {
+	i := uint64(0)
 	for _, a := range l.Accounts {
 		if a.Location != "" {
 			i += 1
