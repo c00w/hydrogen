@@ -229,8 +229,8 @@ func (h *Hydrogen) calculateDropVotes() message.DropChange_List {
 		seen[v.Authorization().Account()] = true
 	}
 
-	for host, _ := range h.currentledger.Accounts {
-		if !seen[host] {
+	for host, a := range h.currentledger.Accounts {
+		if a.Active() && !seen[host] {
 			absenthosts = append(absenthosts, host)
 		}
 	}
