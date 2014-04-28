@@ -11,5 +11,5 @@ func (a *Account) Copy() *Account {
 }
 
 func (a *Account) Active() bool {
-	return len(a.Location) == 0
+	return len(a.Location) != 0
 }

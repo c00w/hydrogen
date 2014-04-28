@@ -24,6 +24,8 @@ func TestHydrogen(t *testing.T) {
 
 	h1 := newHydrogen(n1, tc1)
 	h2 := newHydrogen(n2, tc2)
+	h1.disabledrop = true
+	h2.disabledrop = true
 
 	h1.AddLedger(l)
 	h2.AddLedger(l)
@@ -40,6 +42,19 @@ func TestHydrogen(t *testing.T) {
 
 	v1 := <-tc1
 	v2 := <-tc2
+
+	l = h1.GetLedger()
+
+	if !l.Accounts[util.KeyString(key1)].Active() {
+		t.Errorf("Account not marked as active")
+	}
+
+	if l.HostCount() != 2 {
+		t.Errorf("Incorrect number of active hosts %d != 2", l.HostCount())
+		for _, v := range l.Accounts {
+			t.Logf("%v", *v)
+		}
+	}
 
 	if len(v1) != 2 {
 		for _, v := range v1 {

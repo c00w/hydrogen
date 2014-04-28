@@ -124,6 +124,9 @@ func (l *Ledger) ApplyWealthRedistribution(period time.Duration) {
 
 	totaltaken := uint64(0)
 	hostcount := l.HostCount()
+	if hostcount == 0 {
+		hostcount = 1
+	}
 
 	expected := uint64(1) << 63 / hostcount
 

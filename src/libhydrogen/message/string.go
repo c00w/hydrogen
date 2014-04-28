@@ -25,15 +25,28 @@ func (m MessagePayload) String() string {
 }
 
 func (v Vote) String() string {
-	return fmt.Sprintf("Vote{%v, %v, %v, %v}", v.Votes(), v.Rate(), v.Time(), v.Authorization())
+	return fmt.Sprintf("Vote{%v, %v, %v, %v, %v}", v.Votes(), v.Rate(), v.Drop(), v.Time(), v.Authorization())
+}
+
+func (dl DropChange_List) String() string {
+	d := "Drop_List["
+	for i := 0; i < dl.Len(); i++ {
+		d += fmt.Sprintf("%v, ", dl.At(i))
+	}
+	d += "]"
+	return d
+}
+
+func (d DropChange) String() string {
+	return fmt.Sprintf("Drop{%s}", util.Short(string(d.Account())))
 }
 
 func (cl Change_List) String() string {
-	s := "Change_List{"
+	s := "Change_List["
 	for i := 0; i < cl.Len(); i++ {
 		s += fmt.Sprintf("%v, ", cl.At(i))
 	}
-	s += "}"
+	s += "]"
 	return s
 }
 

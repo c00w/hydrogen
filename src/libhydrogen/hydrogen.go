@@ -31,6 +31,8 @@ type Hydrogen struct {
 	lock *sync.RWMutex
 
 	newledger *sync.Cond
+
+	disabledrop bool
 }
 
 func NewHydrogen(n *libnode.Node) *Hydrogen {
@@ -214,6 +216,10 @@ func (h *Hydrogen) calculateRateChange() message.RateVote {
 }
 
 func (h *Hydrogen) calculateDropVotes() message.DropChange_List {
+	if h.disabledrop {
+		h.disabledrop = false
+		return message.NewDropVotes(nil)
+	}
 
 	absenthosts := make([]string, 0)
 
@@ -301,6 +307,8 @@ func (h *Hydrogen) applyVotes(t TimeRange) ([]message.Change, []message.Vote) {
 			ledger.Drop(account)
 		}
 	}
+
+	ledger.ApplyWealthRedistribution(t.End.Sub(t.Start))
 
 	h.currentledger = ledger
 	h.newledger.Broadcast()
