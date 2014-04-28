@@ -58,7 +58,7 @@ func main() {
 	} else {
 		log.Printf("Boostrapping")
 		l := libhydrogen.NewLedger()
-		l.AddEntry(util.KeyString(key), *listenaddress, 100)
+		l.AddEntry(util.KeyString(key), *listenaddress, 1<<63)
 		h.AddLedger(l)
 	}
 }
