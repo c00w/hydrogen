@@ -64,9 +64,10 @@ func main() {
 		h.AddLedger(l)
 	}
 
-	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGKILL)
+	c := make(chan os.Signal, 10)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
 	for _ = range c {
+		log.Printf("Quitting\n")
 		os.Exit(0)
 	}
 }
