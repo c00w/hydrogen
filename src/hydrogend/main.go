@@ -4,6 +4,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"libhelium"
 	"libhydrogen"
@@ -60,5 +62,11 @@ func main() {
 		l := libhydrogen.NewLedger()
 		l.AddEntry(util.KeyString(key), *listenaddress, 1<<63)
 		h.AddLedger(l)
+	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGKILL)
+	for _ = range c {
+		os.Exit(0)
 	}
 }
