@@ -2,7 +2,7 @@ package message
 
 import (
 	"crypto/ecdsa"
-	"hash"
+	"crypto/sha512"
 
 	"util"
 
@@ -66,7 +66,7 @@ func NewSignedLocationUpdate(key *ecdsa.PrivateKey, newlocation string) Change {
 	return c
 }
 
-func CreateMessageFromChange(c Change, key *ecdsa.PrivateKey) *capnp.Segment {
+func CreateMessageFromChange(c Change, key *ecdsa.PrivateKey) Message {
 	n := capnp.NewBuffer(nil)
 
 	m := NewRootMessage(n)
@@ -78,10 +78,10 @@ func CreateMessageFromChange(c Change, key *ecdsa.PrivateKey) *capnp.Segment {
 	capnp.PointerList(al).Set(0, capnp.Object(a))
 
 	m.SetAuthChain(al)
-	return n
+	return m
 }
 
-func CreateMessageFromVote(v Vote, key *ecdsa.PrivateKey) *capnp.Segment {
+func CreateMessageFromVote(v Vote, key *ecdsa.PrivateKey) Message {
 	n := capnp.NewBuffer(nil)
 
 	m := NewRootMessage(n)
@@ -93,21 +93,24 @@ func CreateMessageFromVote(v Vote, key *ecdsa.PrivateKey) *capnp.Segment {
 	capnp.PointerList(al).Set(0, capnp.Object(a))
 
 	m.SetAuthChain(al)
-	return n
+	return m
 }
 
-func AppendAuthMessage(m Message, run hash.Hash, key *ecdsa.PrivateKey) *capnp.Segment {
+func AppendAuthMessage(m Message, key *ecdsa.PrivateKey) *capnp.Segment {
 
 	n := capnp.NewBuffer(nil)
 
 	m2 := NewRootMessage(n)
+	s := sha512.New()
+	m.Payload().Hash(s)
 
 	l := NewAuthorizationList(n, m.AuthChain().Len()+1)
 	for i, v := range m.AuthChain().ToArray() {
 		capnp.PointerList(l).Set(i, capnp.Object(v))
+		v.Hash(s)
 	}
 
-	a := NewSignedAuthorization(n, key, run.Sum(nil))
+	a := NewSignedAuthorization(n, key, s.Sum(nil))
 
 	capnp.PointerList(l).Set(m.AuthChain().Len(), capnp.Object(a))
 

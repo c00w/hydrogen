@@ -37,8 +37,7 @@ func TestMessageManipulation(t *testing.T) {
 	s1 := capnp.NewBuffer(nil)
 	c := message.NewChange(s1)
 
-	s2 := message.CreateMessageFromChange(c, key1)
-	m := message.ReadRootMessage(s2)
+	m := message.CreateMessageFromChange(c, key1)
 
 	err := m.Verify(l, sha512.New())
 	if err != nil {
@@ -53,7 +52,7 @@ func TestMessageManipulation(t *testing.T) {
 	c.Hash(h)
 	m.AuthChain().ToArray()[0].Hash(h)
 
-	s3 := message.AppendAuthMessage(m, h, key2)
+	s3 := message.AppendAuthMessage(m, key2)
 	m2 := message.ReadRootMessage(s3)
 
 	if m2.AuthChain().Len() != 2 {
@@ -98,8 +97,8 @@ func TestMessagePassing(t *testing.T) {
 
 	h1.SendChange(c)
 	m := <-tc
-	if m.AuthChain().Len() != 2 {
-		t.Errorf("Authchain incorrect length, %d != 2", m.AuthChain().Len())
+	if m.AuthChain().Len() != 3 {
+		t.Errorf("Authchain incorrect length, %d != 3", m.AuthChain().Len())
 		t.Errorf("Message was %v", m)
 	}
 
@@ -107,8 +106,8 @@ func TestMessagePassing(t *testing.T) {
 	v := message.NewVote(n)
 	h1.SendVote(v)
 	m = <-tc
-	if m.AuthChain().Len() != 2 {
-		t.Errorf("Authchain incorrect length, %d != 2", m.AuthChain().Len())
+	if m.AuthChain().Len() != 3 {
+		t.Errorf("Authchain incorrect length, %d != 3", m.AuthChain().Len())
 		t.Errorf("Message was %v", m)
 	}
 

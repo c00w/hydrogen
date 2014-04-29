@@ -2,7 +2,6 @@ package libhydrogen
 
 import (
 	"crypto/sha512"
-	"hash"
 	"log"
 
 	"libhydrogen/message"
@@ -65,37 +64,30 @@ func (mp *messagePasser) handleConn(c *libnode.NeighborNode) {
 			panic(err)
 			continue
 		}
-		go mp.passMessage(m, s)
 		mp.newMessage <- m
 	}
 }
 
 func (mp *messagePasser) handleMessages() {
 	for m := range mp.newMessage {
-		mp.handler.Handle(m)
+		go mp.handler.Handle(m)
+		mp.passMessage(m)
 	}
 }
 
 func (mp *messagePasser) SendChange(c message.Change) {
-	n := message.CreateMessageFromChange(c, mp.node.Key)
-	mp.sendMessage(n)
+	m := message.CreateMessageFromChange(c, mp.node.Key)
+	mp.newMessage <- m
 }
 
 func (mp *messagePasser) SendVote(v message.Vote) {
-	n := message.CreateMessageFromVote(v, mp.node.Key)
-	mp.sendMessage(n)
+	m := message.CreateMessageFromVote(v, mp.node.Key)
+	mp.newMessage <- m
 }
 
-func (mp *messagePasser) sendMessage(n *capnp.Segment) {
-	for _, neighbor := range mp.neighbors {
-		n.WriteTo(neighbor)
-	}
-	mp.newMessage <- message.ReadRootMessage(n)
-}
+func (mp *messagePasser) passMessage(m message.Message) {
 
-func (mp *messagePasser) passMessage(m message.Message, run hash.Hash) {
-
-	n := message.AppendAuthMessage(m, run, mp.node.Key)
+	n := message.AppendAuthMessage(m, mp.node.Key)
 
 	seen := make(map[string]bool)
 
