@@ -65,7 +65,7 @@ func main() {
 	}
 
 	c := make(chan os.Signal, 10)
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	for _ = range c {
 		log.Printf("Quitting\n")
 		os.Exit(0)
