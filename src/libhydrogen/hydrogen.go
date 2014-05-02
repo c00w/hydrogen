@@ -107,6 +107,10 @@ func (h *Hydrogen) GetLocation(account string) (string, error) {
 	return entry.Location, nil
 }
 
+func (h *Hydrogen) Account() string {
+	return util.KeyString(h.mp.node.Key)
+}
+
 func (h *Hydrogen) WaitNewLedger() *Ledger {
 	h.lock.Lock()
 	defer h.lock.Unlock()
@@ -128,6 +132,12 @@ func (h *Hydrogen) AddLedger(l *Ledger) {
 	h.cleanupVotes(t)
 
 	go h.eventloop()
+}
+
+func (h *Hydrogen) SetBootStrap() {
+	h.lock.Lock()
+	h.disabledrop = true
+	h.lock.Unlock()
 }
 
 func (h *Hydrogen) GetLedger() *Ledger {

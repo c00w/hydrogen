@@ -4,7 +4,14 @@ GOPATH := $(CURDIR)
 PATH := ${PATH}:${GOPATH}/bin
 PLATFORM := linux_amd64
 
-pkgs = libnode libhydrogen/message libhydrogen libhelium hydrogend util
+pkgs = libnode libhydrogen/message libhydrogen libhelium hydrogend util \
+	   liblithium
+
+capnp = src/libhelium/account.capnp \
+	src/libhydrogen/message/message.capnp \
+	src/util/util.capnp \
+	src/liblithium/command.capnp \
+
 
 all: capnp
 	go fmt $(pkgs)
@@ -14,9 +21,7 @@ test: all
 	go test $(pkgs)
 
 capnp: bin/capnpc-go
-	capnp compile -ogo src/libhelium/account.capnp
-	capnp compile -ogo src/libhydrogen/message/message.capnp
-	capnp compile -ogo src/util/util.capnp
+	capnp compile -ogo ${capnp}
 
 bin/capnpc-go:
 	go install github.com/glycerine/go-capnproto/capnpc-go

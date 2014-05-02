@@ -24,5 +24,9 @@ func Debugf(format string, v ...interface{}) {
 }
 
 func Short(i string) string {
-	return hex.EncodeToString([]byte(i))[:8]
+	i = hex.EncodeToString([]byte(i))
+	if len(i) > 8 {
+		i = i[:8]
+	}
+	return i
 }
