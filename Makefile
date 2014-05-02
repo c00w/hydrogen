@@ -5,7 +5,7 @@ PATH := ${PATH}:${GOPATH}/bin
 PLATFORM := linux_amd64
 
 pkgs = libnode libhydrogen/message libhydrogen libhelium hydrogend util \
-	   liblithium
+	   liblithium hydrogenctl
 
 capnp = src/libhelium/account.capnp \
 	src/libhydrogen/message/message.capnp \

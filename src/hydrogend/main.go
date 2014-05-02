@@ -9,6 +9,7 @@ import (
 
 	"libhelium"
 	"libhydrogen"
+	"liblithium"
 	"libnode"
 	"util"
 )
@@ -49,6 +50,10 @@ func main() {
 	n := libnode.NewNode(key, *listenaddress)
 	h := libhydrogen.NewHydrogen(n)
 	libhelium.NewServer(n, h)
+	_, err = liblithium.NewServer(h)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if !*bootstrap {
 		log.Printf("Downloading network state")

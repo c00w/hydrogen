@@ -11,7 +11,7 @@ type Client struct {
 }
 
 func NewClient() (*Client, error) {
-	return NewClientAt("/run/hydrogend/lithium.sock")
+	return NewClientAt("/run/hydrogend/lithium.socket")
 }
 
 func NewClientAt(location string) (*Client, error) {
