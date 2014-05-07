@@ -5,13 +5,13 @@ PATH := ${PATH}:${GOPATH}/bin
 PLATFORM := linux_amd64
 
 pkgs = libnode libhydrogen/message libhydrogen libhelium hydrogend util \
-	   liblithium hydrogenctl
+	   liblithium hydrogenctl libberyllium
 
 capnp = src/libhelium/account.capnp \
 	src/libhydrogen/message/message.capnp \
 	src/util/util.capnp \
 	src/liblithium/command.capnp \
-
+	src/libberyllium/command.capnp \
 
 all: capnp
 	go fmt $(pkgs)
