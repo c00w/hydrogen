@@ -19,10 +19,12 @@ func init() {
 	}
 }
 
+// A utility debugging function that will only print if env["DEBUG"] == LOG
 func Debugf(format string, v ...interface{}) {
 	defaultdebug.Output(2, fmt.Sprintf(format, v...))
 }
 
+// Shorten a long string to 8 hex characters
 func Short(i string) string {
 	i = hex.EncodeToString([]byte(i))
 	if len(i) > 8 {

@@ -33,6 +33,7 @@ func (p P521Key) ParseKey() *ecdsa.PrivateKey {
 	return priv
 }
 
+// Generate an encoded key at the given file location
 func GenerateKey(path string) error {
 	fd, err := os.Create(path)
 	if err != nil {
@@ -46,6 +47,7 @@ func GenerateKey(path string) error {
 	return err
 }
 
+// Load an encoded key from the given file location
 func LoadKey(path string) (*ecdsa.PrivateKey, error) {
 	fd, err := os.Open(path)
 	if err != nil {

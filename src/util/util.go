@@ -9,6 +9,7 @@ import (
 	"hash"
 )
 
+// Produce the string representing an account with the given key
 func KeyString(k *ecdsa.PrivateKey) string {
 	s := sha512.New()
 	s.Write(k.X.Bytes())
@@ -16,6 +17,7 @@ func KeyString(k *ecdsa.PrivateKey) string {
 	return string(s.Sum(nil))
 }
 
+// Securely generate a key
 func GenKey() *ecdsa.PrivateKey {
 	k, e := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if e != nil {
@@ -24,10 +26,12 @@ func GenKey() *ecdsa.PrivateKey {
 	return k
 }
 
+// Interface representing something that can write itself to a hash function
 type Hashable interface {
 	Hash(h hash.Hash)
 }
 
+// Utility function to hash multiple items and produce a string
 func Hash(items ...Hashable) string {
 	s := sha512.New()
 	for _, item := range items {
