@@ -8,6 +8,10 @@ import (
 	"util"
 )
 
+/*
+A local node listening on a socket for tls connections for specific protocols
+from neighboring nodes.
+*/
 type Node struct {
 	Key      *ecdsa.PrivateKey
 	Location string
@@ -17,6 +21,7 @@ type Node struct {
 	listeners map[string]chan *NeighborNode
 }
 
+// Create a newnode for a given account and location
 func NewNode(Key *ecdsa.PrivateKey, Location string) *Node {
 	n := &Node{
 		Key,
@@ -28,12 +33,14 @@ func NewNode(Key *ecdsa.PrivateKey, Location string) *Node {
 	return n
 }
 
+// Listen on a given address for tls connections
 func (n *Node) Listen(address string) {
 	tc := make(chan *tls.Conn)
 	n.tlsListen(address, tc)
 	go n.handleConns(tc)
 }
 
+// Connect to a node at the given address with the following protocol
 func (n *Node) Connect(address, protocol string) {
 	c := n.tlsConnect(address, protocol)
 	n.handleConn(c)
@@ -86,6 +93,11 @@ func (n *Node) listNeighbors() []string {
 	return nl
 }
 
+/*
+Register a handler for a given protocol. All nieghbornodes will be sent to the
+channel which support a given protocol, this includes already existing connections
+on that protocol
+*/
 func (n *Node) AddListener(protocol string, c chan *NeighborNode) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
